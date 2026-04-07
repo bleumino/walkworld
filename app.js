@@ -389,9 +389,25 @@ function updateStats() {
   statNums[2].textContent = formattedViews;
 }
 
+
+/* ── FEATURED CARD ────────────────────────────────────────── */
+function updateFeaturedCard() {
+  // Use the day of the year to pick a different tour each day
+  const now = new Date();
+  const start = new Date(now.getFullYear(), 0, 0);
+  const dayOfYear = Math.floor((now - start) / (1000 * 60 * 60 * 24));
+  const tour = tours[dayOfYear % tours.length];
+
+  document.querySelector('.featured-title').textContent = tour.title;
+  document.querySelector('.featured-views').innerHTML = 
+    `<strong>${tour.views}</strong> · ${tour.duration}`;
+  document.querySelector('.watch-pill').setAttribute('onclick', `openModal(${tour.id})`);
+}
+
 /* ── INIT ─────────────────────────────────────────────────── */
 render();
 updateStats();
+updateFeaturedCard();
 
 
 
