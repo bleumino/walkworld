@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WalkWorld — Viral Walking Tours</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <a href="#" class="logo">Walk<span>World</span></a>
+    <ul class="nav-links">
+      <li><a href="#">Tours</a></li>
+      <li><a href="#">Cities</a></li>
+      <li><a href="#">Creators</a></li>
+      <li><a href="#">About</a></li>
+    </ul>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-text">
+      <p class="hero-eyebrow">Curated virtual travel</p>
+      <h1 class="hero-title">The world's streets,<br><em>in your living room.</em></h1>
+      <p class="hero-desc">The internet's most-watched walking tours, hand-curated from YouTube. No flights, no jet lag — just pure urban immersion.</p>
+      <div class="hero-stats">
+        <div>
+          <span class="hero-stat-num">48</span>
+          <span class="hero-stat-label">Tours curated</span>
+        </div>
+        <div>
+          <span class="hero-stat-num">31</span>
+          <span class="hero-stat-label">Cities worldwide</span>
+        </div>
+        <div>
+          <span class="hero-stat-num">240M+</span>
+          <span class="hero-stat-label">Total views</span>
+        </div>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div class="blob blob-1"></div>
+      <div class="blob blob-2"></div>
+      <div class="blob blob-3"></div>
+      <div class="featured-card">
+        <p class="featured-label">🔥 Most watched right now</p>
+        <p class="featured-title">Tokyo Shibuya Crossing — Heavy Rain Backstreets Night Walk</p>
+        <div class="featured-meta">
+          <span class="featured-views"><strong>12.4M</strong> views · 45 min</span>
+          <button class="watch-pill" onclick="openModal(0)">
+            <span class="play-tri"></span> Watch now
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FILTERS + SEARCH -->
+  <div class="filter-bar">
+    <span class="filter-label">Region</span>
+    <button class="filter-btn active" onclick="setFilter('all', this)">All</button>
+    <button class="filter-btn" onclick="setFilter('asia', this)">Asia</button>
+    <button class="filter-btn" onclick="setFilter('europe', this)">Europe</button>
+    <button class="filter-btn" onclick="setFilter('americas', this)">Americas</button>
+    <button class="filter-btn" onclick="setFilter('middleeast', this)">Middle East</button>
+    <button class="filter-btn" onclick="setFilter('trending', this)">🔥 Trending</button>
+    <input
+      class="search-input"
+      type="text"
+      placeholder="Search cities or tours…"
+      id="searchInput"
+      oninput="filterTours()"
+    >
+  </div>
+
+  <!-- TOUR GRID -->
+  <main class="main">
+    <div class="section-header">
+      <h2 class="section-title">Walking Tours</h2>
+      <span class="section-count" id="tourCount"></span>
+    </div>
+    <div class="grid" id="grid"></div>
+  </main>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-logo">Walk<span>World</span></div>
+    <p class="footer-note">All tours link to YouTube creators. We just curate the best ones.</p>
+  </footer>
+
+  <!-- VIDEO MODAL -->
+  <div class="modal-backdrop" id="modal" onclick="handleBackdropClick(event)">
+    <div class="modal" id="modalBox">
+      <div class="modal-video" id="modalVideo"></div>
+      <div class="modal-info">
+        <div class="modal-meta">
+          <p class="modal-city" id="modalCity"></p>
+          <p class="modal-title" id="modalTitle"></p>
+          <p class="modal-views" id="modalViews"></p>
+        </div>
+        <div class="modal-actions">
+          <a class="btn-yt" id="modalYTLink" href="#" target="_blank" rel="noopener">Open in YouTube ↗</a>
+          <button class="btn-close" onclick="closeModal()">✕</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
