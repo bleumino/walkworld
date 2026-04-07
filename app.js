@@ -433,17 +433,17 @@ const tours = [
   },
    {
     id: 29,
-    title: "Queenstown Morning Walk Feb 2024 | City Centre Queenstown | South Island New Zealand Walking Tour 4K",
+    title: "[4K WALK]🇳🇿Newzealand Queenstown city centre walking tour 2024! 4K HDR 60fps",
     city: "Queenstown",
     country: "New Zealand",
     region: "oceania",
-    views: "3,107",
-    duration: "38 min",
+    views: "5,884 ",
+    duration: "39 min",
     trending: false,
     emoji: "💰🛟",
     color: "#2a1f10",
-    videoId: "nWpm2QLHYD4",
-    url: "https://www.youtube.com/watch?v=nWpm2QLHYD4",
+    videoId: "Ke0cq7Uh_CQ",
+    url: "https://www.youtube.com/watch?v=Ke0cq7Uh_CQ",
   },
 
 
@@ -872,17 +872,17 @@ const tours = [
 
    {
     id: 60,
-    title: "Riga Old Town & City Park Walk 🇱🇻 | Peaceful City Center · 4K ASMR",
+    title: "Riga. Old Town Walking Tour. Rain. 4K. ASMR.",
     city: "Riga",
     country: "Latvia",
     region: "europe",
-    views: "674",
-    duration: "43 min",
+    views: "1,001 ",
+    duration: "1 hour and 2 min",
     trending: false,
     emoji: "🍫🖌️",
     color: "#2a1f10",
-    videoId: "e_2dp0mgbGI&t=58s",
-    url: "https://www.youtube.com/watch?v=e_2dp0mgbGI&t=58s",
+    videoId: "BHUrSyXWnFw",
+    url: "https://www.youtube.com/watch?v=BHUrSyXWnFw",
   },
 
 ];
