@@ -1024,8 +1024,8 @@ document.addEventListener('keydown', e => {
 /* ── STATS CALCULATION ────────────────────────────────────── */
 function updateStats() {
   const totalTours = tours.length;
-  const uniqueCities = new Set(tours.map(t => t.city)).size;
-  const uniqueCountries = new Set(tours.map(t => t.country)).size;
+  const uniqueCities = new Set(tours.map(t => t.city.trim().toLowerCase())).size;
+  const uniqueCountries = new Set(tours.map(t => t.country.trim().toLowerCase())).size;
 
   const totalViews = tours.reduce((sum, t) => {
     // Trim whitespace, then strip everything except digits and dots
