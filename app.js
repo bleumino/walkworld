@@ -222,8 +222,8 @@ const tours = [
     trending: false,
     emoji: "🏯🌙",
     color: "#2a1f10",
-    videoId: "NQmmYMRqU5El",
-    url: "https://www.youtube.com/watch?v=NQmmYMRqU5El",
+    videoId: "NQmmYMRqU5E",
+    url: "https://www.youtube.com/watch?v=NQmmYMRqU5E",
   },
 ];
 
@@ -360,5 +360,38 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape') closeModal();
 });
 
+/* ── STATS CALCULATION ────────────────────────────────────── */
+function updateStats() {
+  const totalTours = tours.length;
+  const uniqueCities = new Set(tours.map(t => t.city)).size;
+  
+  // Strip non-numeric characters and sum all views
+  const totalViews = tours.reduce((sum, t) => {
+    const num = parseFloat(t.views.replace(/[^0-9.]/g, ''));
+    const isMillions = t.views.includes('M');
+    const isThousands = t.views.includes(',') && !t.views.includes('M');
+    if (isMillions) return sum + num * 1_000_000;
+    if (isThousands) return sum + num;
+    return sum + num;
+  }, 0);
+
+  // Format total views
+  const formattedViews = totalViews >= 1_000_000
+    ? (totalViews / 1_000_000).toFixed(0) + 'M+'
+    : totalViews.toLocaleString();
+
+  document.querySelector('.hero-stat-num:nth-child(1)') // won't work — see below
+  
+  // Target by index
+  const statNums = document.querySelectorAll('.hero-stat-num');
+  statNums[0].textContent = totalTours;
+  statNums[1].textContent = uniqueCities;
+  statNums[2].textContent = formattedViews;
+}
+
 /* ── INIT ─────────────────────────────────────────────────── */
 render();
+updateStats();
+
+
+
