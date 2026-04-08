@@ -217,39 +217,37 @@ const ALL_COUNTRIES = [
   { name: "Vanuatu",                  region: "oceania"    },
 ];
 
-//render country list on covered.html and index.html
 
 const countryListEl = document.getElementById("countryList");
+if (!countryListEl) return; // prevents crashes on pages without it
 
-// your tours
 const tours = window.tours || [];
-
-// get covered countries
 const coveredCountries = new Set(tours.map(t => t.country));
 
-// IMPORTANT: sort BEFORE rendering
+// sort covered first
 const sortedCountries = [...ALL_COUNTRIES].sort((a, b) => {
   const aCovered = coveredCountries.has(a.name);
   const bCovered = coveredCountries.has(b.name);
   return bCovered - aCovered;
 });
 
-// clear container (important if re-rendering later)
+// render
 countryListEl.innerHTML = "";
 
-// render
 sortedCountries.forEach(country => {
   const hasTour = coveredCountries.has(country.name);
 
   const div = document.createElement("div");
   div.className = "country-item";
+  if (hasTour) div.classList.add("covered");
 
   div.innerHTML = `
     <span class="country-name">${country.name}</span>
-    <span class="country-status ${hasTour ? "covered" : ""}">
+    <span class="country-status">
       ${hasTour ? "✓" : ""}
     </span>
   `;
 
   countryListEl.appendChild(div);
 });
+
