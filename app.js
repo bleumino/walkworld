@@ -1105,12 +1105,12 @@ function updateStats() {
     ? (totalViews / 1_000_000).toFixed(0) + 'M+'
     : totalViews.toLocaleString();
 
-document.querySelector('[data-stat="tours"]').textContent = totalTours;
-document.querySelector('[data-stat="cities"]').textContent = uniqueCities;
-document.querySelector('[data-stat="countries"]').textContent = uniqueCountries;
-document.querySelector('[data-stat="views"]').textContent = formattedViews;
+const statNums = document.querySelectorAll('.hero-stat-num');
+  statNums[0].textContent = totalTours;
+  statNums[1].textContent = uniqueCities;
+  statNums[2].textContent = uniqueCountries;
+  statNums[3].textContent = formattedViews;
 }
-
 
 /* ── FEATURED CARD ────────────────────────────────────────── */
 function updateFeaturedCard() {
@@ -1134,7 +1134,3 @@ function updateFeaturedCard() {
 render();
 updateStats();
 updateFeaturedCard();
-
-
-
-
