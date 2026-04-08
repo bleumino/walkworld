@@ -989,7 +989,12 @@ function render() {
     return regionMatch && searchMatch;
   });
 
-  document.getElementById('tourCount').textContent = filtered.length + ' tours';
+  const tourCountEl = document.getElementById('tourCount');
+
+if (tourCountEl) {
+  tourCountEl.textContent = filtered.length + ' tours';
+}
+
   const grid = document.getElementById('grid');
 
   if (!filtered.length) {
