@@ -7,7 +7,6 @@
    ============================================================ */
 
 const ALL_COUNTRIES = [
-
   /* ── AFRICA ─────────────────────────────────────────────── */
   { name: "Algeria",                  region: "africa"     },
   { name: "Angola",                   region: "africa"     },
@@ -218,19 +217,28 @@ const ALL_COUNTRIES = [
   { name: "Vanuatu",                  region: "oceania"    },
 ];
 
+//render country list on covered.html and index.html
 
 const countryListEl = document.getElementById("countryList");
 
-// Example: your tours data (adjust to match your real structure)
+// your tours
 const tours = window.tours || [];
 
-// Get all countries that have tours
-const coveredCountries = new Set(
-  tours.map(t => t.country)
-);
+// get covered countries
+const coveredCountries = new Set(tours.map(t => t.country));
 
-// Render countries
-countries.forEach(country => {
+// IMPORTANT: sort BEFORE rendering
+const sortedCountries = [...ALL_COUNTRIES].sort((a, b) => {
+  const aCovered = coveredCountries.has(a.name);
+  const bCovered = coveredCountries.has(b.name);
+  return bCovered - aCovered;
+});
+
+// clear container (important if re-rendering later)
+countryListEl.innerHTML = "";
+
+// render
+sortedCountries.forEach(country => {
   const hasTour = coveredCountries.has(country.name);
 
   const div = document.createElement("div");
@@ -244,11 +252,4 @@ countries.forEach(country => {
   `;
 
   countryListEl.appendChild(div);
-});
-
-
-countries.sort((a, b) => {
-  const aCovered = coveredCountries.has(a.name);
-  const bCovered = coveredCountries.has(b.name);
-  return bCovered - aCovered;
 });
