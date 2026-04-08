@@ -994,41 +994,45 @@ function render() {
 if (tourCountEl) {
   tourCountEl.textContent = filtered.length + ' tours';
 }
+const grid = document.getElementById('grid');
+if (!grid) return;
 
-  const grid = document.getElementById('grid');
+if (!filtered.length) {
+  grid.innerHTML = `
+    <div class="empty">
+      <div class="empty-icon">🗺️</div>
+      <p>No tours found. Try a different search or filter.</p>
+    </div>`;
+  return;
+}
 
-  if (!filtered.length) {
-    grid.innerHTML = `
-      <div class="empty">
-        <div class="empty-icon">🗺️</div>
-        <p>No tours found. Try a different search or filter.</p>
-      </div>`;
-    return;
-  }
+grid.innerHTML = filtered.map((t, i) => `
+  <div class="card" style="animation-delay: ${i * 0.04}s">
+    <div class="card-thumb" style="background: ${t.color};" onclick="openModal(${t.id})">
+      <div class="card-thumb-bg">${t.emoji}</div>
+      <div class="card-thumb-overlay"></div>
+      <div class="thumb-play"><div class="thumb-play-tri"></div></div>
 
-  grid.innerHTML = filtered.map((t, i) => `
-    <div class="card" style="animation-delay: ${i * 0.04}s">
-      <div class="card-thumb" style="background: ${t.color};" onclick="openModal(${t.id})">
-        <div class="card-thumb-bg">${t.emoji}</div>
-        <div class="card-thumb-overlay"></div>
-        <div class="thumb-play"><div class="thumb-play-tri"></div></div>
-        <div class="card-badge-wrap">
-          ${t.trending ? '<span class="badge badge-trending">Trending</span>' : ''}
-          <span class="badge badge-region">${regionLabel(t.region)}</span>
-        </div>
-        <span class="card-duration">${t.duration}</span>
+      <div class="card-badge-wrap">
+        ${t.trending ? '<span class="badge badge-trending">Trending</span>' : ''}
+        <span class="badge badge-region">${regionLabel(t.region)}</span>
       </div>
-      <div class="card-body">
-        <p class="card-city"> City: ${t.city}</p>
-        <p class="card-country"> Country: ${t.country}</p>
-        <p class="card-title">${t.title}</p>
-        <div class="card-footer">
-          <span class="card-views"><strong>${t.views}</strong> views</span>
-          <button class="card-watch" onclick="openModal(${t.id})">▶ Watch</button>
-        </div>
+
+      <span class="card-duration">${t.duration}</span>
+    </div>
+
+    <div class="card-body">
+      <p class="card-city">City: ${t.city}</p>
+      <p class="card-country">Country: ${t.country}</p>
+      <p class="card-title">${t.title}</p>
+
+      <div class="card-footer">
+        <span class="card-views"><strong>${t.views}</strong> views</span>
+        <button class="card-watch" onclick="openModal(${t.id})">▶ Watch</button>
       </div>
     </div>
-  `).join('');
+  </div>
+`).join('');
 }
 
 /* ── MODAL ────────────────────────────────────────────────── */
@@ -1111,16 +1115,20 @@ function updateStats() {
 
 /* ── FEATURED CARD ────────────────────────────────────────── */
 function updateFeaturedCard() {
-  // Use the day of the year to pick a different tour each day
+  const titleEl = document.querySelector('.featured-title');
+  const viewsEl = document.querySelector('.featured-views');
+  const btnEl = document.querySelector('.watch-pill');
+
+  if (!titleEl || !viewsEl || !btnEl) return;
+
   const now = new Date();
   const start = new Date(now.getFullYear(), 0, 0);
   const dayOfYear = Math.floor((now - start) / (1000 * 60 * 60 * 24));
   const tour = tours[dayOfYear % tours.length];
 
-  document.querySelector('.featured-title').textContent = tour.title;
-  document.querySelector('.featured-views').innerHTML = 
-    `<strong>${tour.views}</strong> · ${tour.duration}`;
-  document.querySelector('.watch-pill').setAttribute('onclick', `openModal(${tour.id})`);
+  titleEl.textContent = tour.title;
+  viewsEl.innerHTML = `<strong>${tour.views}</strong> · ${tour.duration}`;
+  btnEl.setAttribute('onclick', `openModal(${tour.id})`);
 }
 
 /* ── INIT ─────────────────────────────────────────────────── */
