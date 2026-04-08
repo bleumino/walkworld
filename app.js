@@ -1135,7 +1135,6 @@ render();
 updateStats();
 updateFeaturedCard();
 
-window.tours = tours;
 
 
 
