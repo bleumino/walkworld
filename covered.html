@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WalkWorld — Viral Walking Tours</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <a href="index.html" class="logo">Walk<span>World</span></a>
+  </nav>
+<!-- HERO -->
+   <section class="hero">
+  <div class="coverage-hero">
+    <div class="coverage-hero-text">
+      <p class="hero-eyebrow">Global reach</p>
+      <h1 class="coverage-hero-title">Every country,<br><em>tracked.</em></h1>
+      <p class="coverage-hero-desc">
+        We're working to cover every country on Earth. Green means we have at least one walking tour for a city in that country. 
+      </p>
+    </div>
+    <div class="coverage-ring-wrap">
+      <div class="coverage-ring">
+        <svg viewBox="0 0 120 120">
+          <circle class="ring-track" cx="60" cy="60" r="50" />
+          <circle class="ring-fill"  cx="60" cy="60" r="50" id="ringFill" />
+        </svg>
+        <div class="ring-label">
+          <span class="ring-pct" id="ringPct">0%</span>
+          <span class="ring-sub">covered</span>
+        </div>
+      </div>
+      <p class="ring-caption"><strong id="coveredCount">0</strong> of <strong id="totalCount">0</strong> countries</p>
+    </div>
+  </div>
+  </section>
+
+  <div class="country-list" id="countryList"></div>
+
+   <script src="country.js"> </script>
