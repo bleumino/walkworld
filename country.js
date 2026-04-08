@@ -244,7 +244,7 @@ document.addEventListener("DOMContentLoaded", () => {
   countryListEl.innerHTML = "";
 
   sortedCountries.forEach(country => {
-    const hasTour = coveredCountries.has(country.name);
+    const hasTour = coveredCountries.has(country.name.trim().toLowerCase());
 
     const div = document.createElement("div");
     div.className = "country-item";
