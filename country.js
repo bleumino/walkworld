@@ -222,7 +222,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (!countryListEl) return;
 
-  const tours = JSON.parse(localStorage.getItem("tours")) || [];
+ const tours = window.tours || [];
   const coveredCountries = new Set(tours.map(t => t.country));
 
   const sortedCountries = [...ALL_COUNTRIES].sort((a, b) => {
@@ -246,3 +246,4 @@ document.addEventListener("DOMContentLoaded", () => {
     countryListEl.appendChild(div);
   });
 });
+
