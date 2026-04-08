@@ -217,37 +217,32 @@ const ALL_COUNTRIES = [
   { name: "Vanuatu",                  region: "oceania"    },
 ];
 
+document.addEventListener("DOMContentLoaded", () => {
+  const countryListEl = document.getElementById("countryList");
 
-const countryListEl = document.getElementById("countryList");
-if (!countryListEl) return; // prevents crashes on pages without it
+  if (!countryListEl) return;
 
-const tours = window.tours || [];
-const coveredCountries = new Set(tours.map(t => t.country));
+  const tours = JSON.parse(localStorage.getItem("tours")) || [];
+  const coveredCountries = new Set(tours.map(t => t.country));
 
-// sort covered first
-const sortedCountries = [...ALL_COUNTRIES].sort((a, b) => {
-  const aCovered = coveredCountries.has(a.name);
-  const bCovered = coveredCountries.has(b.name);
-  return bCovered - aCovered;
+  const sortedCountries = [...ALL_COUNTRIES].sort((a, b) => {
+    return coveredCountries.has(b.name) - coveredCountries.has(a.name);
+  });
+
+  countryListEl.innerHTML = "";
+
+  sortedCountries.forEach(country => {
+    const hasTour = coveredCountries.has(country.name);
+
+    const div = document.createElement("div");
+    div.className = "country-item";
+    if (hasTour) div.classList.add("covered");
+
+    div.innerHTML = `
+      <span class="country-name">${country.name}</span>
+      <span class="country-status">${hasTour ? "✓" : ""}</span>
+    `;
+
+    countryListEl.appendChild(div);
+  });
 });
-
-// render
-countryListEl.innerHTML = "";
-
-sortedCountries.forEach(country => {
-  const hasTour = coveredCountries.has(country.name);
-
-  const div = document.createElement("div");
-  div.className = "country-item";
-  if (hasTour) div.classList.add("covered");
-
-  div.innerHTML = `
-    <span class="country-name">${country.name}</span>
-    <span class="country-status">
-      ${hasTour ? "✓" : ""}
-    </span>
-  `;
-
-  countryListEl.appendChild(div);
-});
-
