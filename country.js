@@ -220,14 +220,26 @@ const ALL_COUNTRIES = [
 document.addEventListener("DOMContentLoaded", () => {
   const countryListEl = document.getElementById("countryList");
 
+  
+
   if (!countryListEl) return;
 
- const tours = window.tours || [];
-  const coveredCountries = new Set(tours.map(t => t.country));
+  const tours = Array.isArray(window.tours) ? window.tours : [];
+
+  if (!window.tours) {
+  console.warn("tours not loaded yet — app.js may be missing");
+}
+
+ const coveredCountries = new Set(
+  tours.map(t => t.country.trim().toLowerCase())
+);
 
   const sortedCountries = [...ALL_COUNTRIES].sort((a, b) => {
-    return coveredCountries.has(b.name) - coveredCountries.has(a.name);
-  });
+  return (
+    coveredCountries.has(b.name.toLowerCase()) -
+    coveredCountries.has(a.name.toLowerCase())
+  );
+});
 
   countryListEl.innerHTML = "";
 
