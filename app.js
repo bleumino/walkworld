@@ -1505,6 +1505,119 @@ const tours = [
     videoId: "VQSD_mWQFgA",
     url: "https://www.youtube.com/watch?v=VQSD_mWQFgA",
   },
+   {
+    id: 105,
+    title: "Colorful Streets of Porto, Portugal- 4K 60fps",
+    city: "Porto",
+    country: "Portugal",
+    region: "europe",
+    views: "2,172 ",
+    duration: "50 min",
+    trending: false,
+    emoji: "🇵🇹☀️",
+    color: "#2a1f10",
+    videoId: "kF8cJaemxDs",
+    url: "https://www.youtube.com/watch?v=kF8cJaemxDs",
+  },
+   {
+    id: 106,
+    title: "Manchester, England Walking Tour 4K 60FPS",
+    city: "Manchester",
+    country: "England",
+    region: "europe",
+    views: "12,756 ",
+    duration: "1 hour and 12 min",
+    trending: false,
+    emoji: "🇬🇧🏙️",
+    color: "#2a1f10",
+    videoId: "L_5HlsqPF-A",
+    url: "https://www.youtube.com/watch?v=L_5HlsqPF-A",
+  },
+   {
+    id: 107,
+    title: "Walking tour thru some of the streets of downtown Nuuk, Greenland",
+    city: "Nuuk",
+    country: "Greenland",
+    region: "americas",
+    views: "45,341",
+    duration: "33 min",
+    trending: false,
+    emoji: "🇬🇱🇩🇰",
+    color: "#2a1f10",
+    videoId: "yLZcOmIV36g",
+    url: "https://www.youtube.com/watch?v=yLZcOmIV36g",
+  },
+   {
+    id: 108,
+    title: "Walking tour Seychelles Victoria",
+    city: "Victoria",
+    country: "Seychelles",
+    region: "africa",
+    views: "7,090 ",
+    duration: "41 min",
+    trending: false,
+    emoji: "🇸🇨🌴",
+    color: "#2a1f10",
+    videoId: "xmMzMR8aT_I",
+    url: "https://www.youtube.com/watch?v=xmMzMR8aT_I",
+  },
+
+{
+    id: 109,
+    title: "Djibouti City – Exploring Everyday Life Around Rimbaud Square & Central Streets 🇩🇯 Djibouti Oct 2025",
+    city: "Djibouti City",
+    country: "Djibouti",
+    region: "africa",
+    views: "85,228",
+    duration: "49 min",
+    trending: false,
+    emoji: "🇩🇯🌆",
+    color: "#2a1f10",
+    videoId: "hIr6_y05z34",
+    url: "https://www.youtube.com/watch?v=hIr6_y05z34",
+  },
+   {
+    id: 110,
+    title: "Walking in Roseau, Dominica 7",
+    city: "Roseau",
+    country: "Dominica",
+    region: "americas",
+    views: "8,377 ",
+    duration: "13 min",
+    trending: false,
+    emoji: "🇩🇲🏙️",
+    color: "#2a1f10",
+    videoId: "_CWGSr-qtWc",
+    url: "https://www.youtube.com/watch?v=_CWGSr-qtWc",
+  },
+   {
+    id: 111,
+    title: "🇯🇴 AMMAN DOWNTOWN DISTRICT JORDAN 2023 [FULL TOUR]",
+    city: "Amman",
+    country: "Jordan",
+    region: "middleeast",
+    views: "1,876,024  ",
+    duration: "31 min",
+    trending: false,
+    emoji: "🐫🕌",
+    color: "#2a1f10",
+    videoId: "UHT5g90zioc",
+    url: "https://www.youtube.com/watch?v=UHT5g90zioc",
+  },
+   {
+    id: 112,
+    title: "Kyoto, Japan 4K Walking Tour - Captions & Immersive Sound [4K Ultra HD/60fps]",
+    city: "Kyoto",
+    country: "Japan",
+    region: "asia",
+    views: "133,719",
+    duration: "1 hour and 11 min",
+    trending: false,
+    emoji: "🌸🏯",
+    color: "#2a1f10",
+    videoId: "arOQ7slh3pM",
+    url: "https://www.youtube.com/watch?v=arOQ7slh3pM",
+  },
 
 ];
 
@@ -1693,6 +1806,27 @@ function updateFeaturedCard() {
   btnEl.setAttribute('onclick', `openModal(${tour.id})`);
 }
 
+
+/* ── DARK MODE ────────────────────────────────────────────── */
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  localStorage.setItem('ww-theme', theme);
+}
+ 
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme');
+  applyTheme(current === 'dark' ? 'light' : 'dark');
+}
+ 
+// On load: respect saved preference, then system preference
+(function initTheme() {
+  const saved = localStorage.getItem('ww-theme');
+  if (saved) {
+    applyTheme(saved);
+  } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+    applyTheme('dark');
+  }
+})();
 /* ── INIT ─────────────────────────────────────────────────── */
 render();
 updateStats();
