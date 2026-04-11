@@ -12,11 +12,16 @@
   <!-- NAV -->
   <nav>
     <a href="#" class="logo">Walk<span>World</span></a>
-    <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle dark mode" title="Toggle dark mode">
+    <ul class="nav-links">
+      <li><a href="index.html" style="color:var(--ink)">Tours</a></li>
+      <li><a href="coverage.html">Coverage</a></li>
+      <li><a href="map.html">Map</a></li>
+      
+      <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle dark mode" title="Toggle dark mode">
       <span class="icon-moon">🌙</span>
       <span class="icon-sun">☀️</span>
     </button>
-
+    </ul>
   </nav>
 
   <!-- HERO -->
@@ -64,6 +69,9 @@
   <!-- FILTERS + SEARCH -->
   <div class="filter-bar">
     <span class="filter-label">Region</span>
+    <button class="random-btn" onclick="openRandomTour()">
+        <span class="random-dice">🎲</span> Surprise me
+      </button>
     <button class="filter-btn active" onclick="setFilter('all', this)">All</button>
     <button class="filter-btn" onclick="setFilter('asia', this)">Asia</button>
     <button class="filter-btn" onclick="setFilter('europe', this)">Europe</button>
@@ -80,6 +88,30 @@
       oninput="filterTours()"
     >
   </div>
+
+  <!-- RANDOM TOUR MODAL -->
+<div class="random-backdrop" id="randomBackdrop" onclick="handleRandomBackdropClick(event)">
+  <div class="random-modal" id="randomModal">
+    <button class="btn-close random-close" onclick="closeRandom()">✕</button>
+    <div class="random-spinning" id="randomSpinner">
+      <div class="random-globe" id="randomGlobe">🌍</div>
+      <p class="random-label" id="randomLabel">Spinning the globe…</p>
+    </div>
+    <div class="random-result" id="randomResult">
+      <p class="random-result-eyebrow">Your random tour</p>
+      <p class="random-result-city" id="randomResultCity"></p>
+      <p class="random-result-title" id="randomResultTitle"></p>
+      <p class="random-result-meta" id="randomResultMeta"></p>
+      <div class="random-result-actions">
+        <button class="watch-pill" id="randomWatchBtn">
+          <span class="play-tri"></span> Watch now
+        </button>
+        <button class="random-again-btn" onclick="spinAgain()">🎲 Another one</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 
   <!-- TOUR GRID -->
   <main class="main">

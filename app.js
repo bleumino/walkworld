@@ -1827,6 +1827,69 @@ function toggleTheme() {
     applyTheme('dark');
   }
 })();
+
+
+/* ── RANDOM TOUR ── */
+const GLOBES = ['🌍','🌎','🌏'];
+let randomSpinInterval = null;
+let lastRandomId = null;
+
+function openRandomTour() {
+  document.getElementById('randomBackdrop').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  spinAgain();
+}
+
+function spinAgain() {
+  document.getElementById('randomSpinner').style.display = 'flex';
+  document.getElementById('randomResult').style.display  = 'none';
+
+  let i = 0;
+  const globeEl  = document.getElementById('randomGlobe');
+  const labelEl  = document.getElementById('randomLabel');
+  const spinLabels = ['Spinning the globe…','Finding somewhere new…','Could be anywhere…','Almost there…'];
+  let labelI = 0;
+
+  clearInterval(randomSpinInterval);
+  randomSpinInterval = setInterval(() => {
+    globeEl.textContent = GLOBES[i % GLOBES.length];
+    if (i % 6 === 0) { labelEl.textContent = spinLabels[labelI % spinLabels.length]; labelI++; }
+    i++;
+  }, 120);
+
+  setTimeout(() => {
+    clearInterval(randomSpinInterval);
+    let pick;
+    do { pick = tours[Math.floor(Math.random() * tours.length)]; }
+    while (tours.length > 1 && pick.id === lastRandomId);
+    lastRandomId = pick.id;
+
+    globeEl.textContent = pick.emoji;
+    document.getElementById('randomResultCity').textContent  = pick.city + ', ' + pick.country;
+    document.getElementById('randomResultTitle').textContent = pick.title;
+    document.getElementById('randomResultMeta').textContent  = pick.views + ' views · ' + pick.duration;
+    document.getElementById('randomWatchBtn').onclick = () => { closeRandom(); openModal(pick.id); };
+
+    setTimeout(() => {
+      document.getElementById('randomSpinner').style.display = 'none';
+      document.getElementById('randomResult').style.display  = 'flex';
+    }, 300);
+  }, 1800);
+}
+
+function closeRandom() {
+  clearInterval(randomSpinInterval);
+  document.getElementById('randomBackdrop').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function handleRandomBackdropClick(e) {
+  if (e.target === document.getElementById('randomBackdrop')) closeRandom();
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { closeModal(); closeRandom(); }
+});
 /* ── INIT ─────────────────────────────────────────────────── */
 render();
 updateStats();

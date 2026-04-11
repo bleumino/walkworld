@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>World Map — WalkWorld</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    /* ── MAP PAGE STYLES ── */
+    .map-hero {
+      padding: 3rem 3rem 2rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 2rem;
+      flex-wrap: wrap;
+    }
+    .map-hero-eyebrow {
+      font-size: 0.75rem;
+      font-weight: 500;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--rust);
+      margin-bottom: 0.6rem;
+    }
+    .map-hero-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.8rem, 3vw, 2.75rem);
+      font-weight: 700;
+      line-height: 1.1;
+      letter-spacing: -0.5px;
+      margin-bottom: 0.6rem;
+    }
+    .map-hero-title em { font-style: italic; color: var(--rust); }
+    .map-hero-desc {
+      font-size: 0.9rem;
+      color: var(--muted);
+      max-width: 480px;
+      line-height: 1.7;
+      font-weight: 300;
+    }
+    .map-legend {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      flex-shrink: 0;
+      flex-wrap: wrap;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+    .legend-swatch {
+      width: 16px;
+      height: 16px;
+      border-radius: 3px;
+      flex-shrink: 0;
+    }
+    .swatch-covered   { background: #c4410c; }
+    .swatch-uncovered { background: #ddd8d0; }
+    .swatch-hover     { background: #e8845c; }
+
+    /* ── MAP CONTAINER ── */
+    .map-wrap {
+      background: #eef4f8;
+      border-bottom: 1px solid var(--border);
+      position: relative;
+      overflow: hidden;
+      user-select: none;
+    }
+    #worldMap {
+      width: 100%;
+      height: auto;
+      display: block;
+      cursor: grab;
+    }
+    #worldMap:active { cursor: grabbing; }
+
+    .map-controls {
+      position: absolute;
+      bottom: 1rem;
+      right: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .map-ctrl-btn {
+      width: 32px;
+      height: 32px;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-size: 1.1rem;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--ink);
+      transition: background 0.15s;
+      font-family: 'DM Sans', sans-serif;
+    }
+    .map-ctrl-btn:hover { background: var(--cream); }
+
+    /* tooltip */
+    .map-tooltip {
+      position: absolute;
+      background: var(--ink);
+      color: #fff;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.75rem;
+      padding: 7px 12px;
+      border-radius: 5px;
+      pointer-events: none;
+      white-space: nowrap;
+      opacity: 0;
+      transition: opacity 0.15s;
+      z-index: 10;
+      transform: translate(-50%, calc(-100% - 10px));
+    }
+    .map-tooltip.visible { opacity: 1; }
+    .map-tooltip strong { color: #fff; }
+    .map-tooltip span   { color: rgba(255,255,255,0.55); }
+
+    /* ── TOUR PANEL ── */
+    .tour-panel {
+      padding: 2rem 3rem;
+      min-height: 220px;
+      border-bottom: 1px solid var(--border);
+    }
+    .panel-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 180px;
+      text-align: center;
+      color: var(--muted);
+      gap: 0.75rem;
+    }
+    .panel-placeholder-icon { font-size: 2.5rem; }
+    .panel-placeholder p { font-size: 0.875rem; }
+
+    .panel-header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .panel-country {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.4rem;
+      font-weight: 700;
+    }
+    .panel-count {
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+    .panel-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1rem;
+    }
+
+    /* mini cards in the panel */
+    .mini-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow: hidden;
+      display: flex;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .mini-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.08); }
+    .mini-thumb {
+      width: 90px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8rem;
+    }
+    .mini-body { padding: 0.75rem; flex: 1; min-width: 0; }
+    .mini-city {
+      font-size: 0.6rem;
+      font-weight: 500;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--rust);
+      margin-bottom: 4px;
+    }
+    .mini-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 0.82rem;
+      line-height: 1.35;
+      color: var(--ink);
+      margin-bottom: 6px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .mini-meta { font-size: 0.7rem; color: var(--muted); }
+    .mini-meta strong { color: var(--ink); font-weight: 500; }
+
+    /* stats bar */
+    .stats-bar {
+      display: flex;
+      gap: 0;
+      border-bottom: 1px solid var(--border);
+      border-top: 1px solid var(--border);
+    }
+    .stat-item {
+      flex: 1;
+      padding: 1rem 1.5rem;
+      border-right: 1px solid var(--border);
+      text-align: center;
+    }
+    .stat-item:last-child { border-right: none; }
+    .stat-num {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--ink);
+      display: block;
+    }
+    .stat-lbl { font-size: 0.72rem; color: var(--muted); letter-spacing: 0.5px; }
+
+    @media (max-width: 768px) {
+      .map-hero { padding: 2rem 1.25rem 1.5rem; }
+      .tour-panel { padding: 1.5rem 1.25rem; }
+      .stats-bar { flex-wrap: wrap; }
+      .stat-item { min-width: 50%; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="index.html" class="logo">Walk<span>World</span></a>
+  <ul class="nav-links">
+    <li><a href="index.html">Tours</a></li>
+    <li><a href="coverage.html">Coverage</a></li>
+    <li><a href="map.html" style="color:var(--ink)">Map</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<div class="map-hero">
+  <div>
+    <p class="map-hero-eyebrow">Interactive map</p>
+    <h1 class="map-hero-title">Walk the <em>whole world.</em></h1>
+    <p class="map-hero-desc">Click any highlighted country to see its walking tours. Green countries have at least one tour — keep adding to the collection to fill the map.</p>
+  </div>
+  <div class="map-legend">
+    <div class="legend-item"><div class="legend-swatch swatch-covered"></div> Has tours</div>
+    <div class="legend-item"><div class="legend-swatch swatch-hover"></div> Hovered</div>
+    <div class="legend-item"><div class="legend-swatch swatch-uncovered"></div> Not yet covered</div>
+  </div>
+</div>
+
+<!-- STATS BAR -->
+<div class="stats-bar">
+  <div class="stat-item">
+    <span class="stat-num" id="statTours">–</span>
+    <span class="stat-lbl">Total tours</span>
+  </div>
+  <div class="stat-item">
+    <span class="stat-num" id="statCountries">–</span>
+    <span class="stat-lbl">Countries covered</span>
+  </div>
+  <div class="stat-item">
+    <span class="stat-num" id="statPct">–</span>
+    <span class="stat-lbl">World coverage</span>
+  </div>
+  <div class="stat-item">
+    <span class="stat-num" id="statRegions">–</span>
+    <span class="stat-lbl">Regions represented</span>
+  </div>
+</div>
+
+<!-- MAP -->
+<div class="map-wrap" id="mapWrap">
+  <svg id="worldMap" viewBox="0 0 960 500" xmlns="http://www.w3.org/2000/svg"></svg>
+  <div class="map-controls">
+    <button class="map-ctrl-btn" id="zoomIn"  title="Zoom in">+</button>
+    <button class="map-ctrl-btn" id="zoomOut" title="Zoom out">−</button>
+    <button class="map-ctrl-btn" id="zoomReset" title="Reset" style="font-size:0.75rem;">⌂</button>
+  </div>
+  <div class="map-tooltip" id="mapTooltip"></div>
+</div>
+
+<!-- TOUR PANEL -->
+<div class="tour-panel" id="tourPanel">
+  <div class="panel-placeholder" id="panelPlaceholder">
+    <div class="panel-placeholder-icon">🗺️</div>
+    <p>Click a highlighted country on the map to see its walking tours</p>
+  </div>
+  <div id="panelContent" style="display:none;">
+    <div class="panel-header">
+      <h2 class="panel-country" id="panelCountry"></h2>
+      <span class="panel-count" id="panelCount"></span>
+    </div>
+    <div class="panel-grid" id="panelGrid"></div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">Walk<span>World</span></div>
+  <p class="footer-note">All tours link to YouTube creators. We just curate the best ones.</p>
+</footer>
+
+<!-- VIDEO MODAL (reused from main site) -->
+<div class="modal-backdrop" id="modal" onclick="handleBackdropClick(event)">
+  <div class="modal" id="modalBox">
+    <div class="modal-video" id="modalVideo"></div>
+    <div class="modal-info">
+      <div class="modal-meta">
+        <p class="modal-city"  id="modalCity"></p>
+        <p class="modal-title" id="modalTitle"></p>
+        <p class="modal-views" id="modalViews"></p>
+      </div>
+      <div class="modal-actions">
+        <a class="btn-yt" id="modalYTLink" href="#" target="_blank" rel="noopener">Open in YouTube ↗</a>
+        <button class="btn-close" onclick="closeModal()">✕</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3-geo@3/dist/d3-geo.min.js"></script>
+<script src="app.js"></script>
+<script>
+/* ============================================================
+   map.js — inline
+   ============================================================ */
+
+/* ── Build coverage map from tours array ── */
+function buildCoverageMap() {
+  const map = {};
+  tours.forEach(t => {
+    const key = t.country.trim().toLowerCase();
+    if (!map[key]) map[key] = [];
+    map[key].push(t);
+  });
+  return map;
+}
+
+/* ── Country name → normalised key used in coverage map ──
+   TopoJSON uses full English country names; we need to match
+   against the shorter keys used in app.js (e.g. "UK", "USA").
+   This lookup handles the mismatches.                        */
+const NAME_MAP = {
+  "united states of america":    "usa",
+  "united states":               "usa",
+  "united kingdom":              "uk",
+  "turkiye":                     "türkiye",
+  "turkey":                      "türkiye",
+  "south korea":                 "south korea",
+  "democratic republic of the congo": "dr congo",
+  "republic of the congo":       "congo",
+  "czechia":                     "czechia",
+  "czech republic":              "czechia",
+  "russia":                      "russia",
+  "russian federation":          "russia",
+  "hong kong s.a.r.":            "hong kong",
+  "hong kong":                   "hong kong",
+  "taiwan":                      "taiwan",
+  "taiwan (province of china)":  "taiwan",
+  "vietnam":                     "vietnam",
+  "viet nam":                    "vietnam",
+  "ivory coast":                 "ivory coast",
+  "côte d'ivoire":               "ivory coast",
+  "cape verde":                  "cabo verde",
+  "trinidad and tobago":         "trinidad and tobago",
+  "trinidad & tobago":           "trinidad and tobago",
+  "east timor":                  "east timor",
+  "timor-leste":                 "east timor",
+  "bolivia (plurinational state of)": "bolivia",
+  "venezuela (bolivarian republic of)": "venezuela",
+  "iran (islamic republic of)":  "iran",
+  "syria":                       "syria",
+  "syrian arab republic":        "syria",
+  "myanmar":                     "myanmar",
+  "burma":                       "myanmar",
+  "north korea":                 "north korea",
+  "democratic people's republic of korea": "north korea",
+  "laos":                        "laos",
+  "lao people's democratic republic": "laos",
+  "tanzania":                    "tanzania",
+  "united republic of tanzania": "tanzania",
+  "moldova":                     "moldova",
+  "republic of moldova":         "moldova",
+  "eswatini":                    "eswatini",
+  "swaziland":                   "eswatini",
+  "são tomé and príncipe":       "são tomé and príncipe",
+  "sao tome and principe":       "são tomé and príncipe",
+  "north macedonia":             "north macedonia",
+  "kosovo":                      "kosovo",
+  "new zealand":                 "new zealand",
+  "papua new guinea":            "papua new guinea",
+  "solomon islands":             "solomon islands",
+  "marshall islands":            "marshall islands",
+  "micronesia (federated states of)": "micronesia",
+  "federated states of micronesia":   "micronesia",
+};
+
+function normaliseName(name) {
+  if (!name) return '';
+  const lower = name.toLowerCase().trim();
+  return NAME_MAP[lower] || lower;
+}
+
+/* ── Stats ── */
+function updateStats(coverageMap) {
+  const coveredCountries = Object.keys(coverageMap).length;
+  const totalCountries   = 195; // approx UN member states
+  const regions = new Set(tours.map(t => t.region)).size;
+
+  document.getElementById('statTours').textContent     = tours.length;
+  document.getElementById('statCountries').textContent = coveredCountries;
+  document.getElementById('statPct').textContent       = Math.round((coveredCountries / totalCountries) * 100) + '%';
+  document.getElementById('statRegions').textContent   = regions;
+}
+
+/* ── Render tour panel ── */
+function showPanel(countryName, tourList) {
+  document.getElementById('panelPlaceholder').style.display = 'none';
+  document.getElementById('panelContent').style.display     = 'block';
+  document.getElementById('panelCountry').textContent = countryName;
+  document.getElementById('panelCount').textContent   =
+    tourList.length + (tourList.length === 1 ? ' tour' : ' tours');
+
+  document.getElementById('panelGrid').innerHTML = tourList.map(t => `
+    <div class="mini-card" onclick="openModal(${t.id})">
+      <div class="mini-thumb" style="background:${t.color};">${t.emoji}</div>
+      <div class="mini-body">
+        <p class="mini-city">${t.city}</p>
+        <p class="mini-title">${t.title}</p>
+        <p class="mini-meta"><strong>${t.views}</strong> views · ${t.duration}</p>
+      </div>
+    </div>
+  `).join('');
+
+  document.getElementById('tourPanel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+/* ── Modal (reused from app.js) ── */
+function handleBackdropClick(e) {
+  if (e.target === document.getElementById('modal')) closeModal();
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+/* ── D3 Map ── */
+const svg      = document.getElementById('worldMap');
+const tooltip  = document.getElementById('mapTooltip');
+const mapWrap  = document.getElementById('mapWrap');
+
+let transform  = { x: 0, y: 0, k: 1 };
+let dragStart  = null;
+let isDragging = false;
+let gEl; // the <g> that holds all paths
+
+const COVERED_FILL   = '#c4410c';
+const COVERED_HOVER  = '#e8845c';
+const UNCOVERED_FILL = '#ddd8d0';
+const UNCOVERED_HOVER= '#c8c4bc';
+const OCEAN_FILL     = '#d6e8f5';
+const BORDER_COLOR   = '#fff';
+
+function applyTransform() {
+  if (gEl) gEl.setAttribute('transform',
+    `translate(${transform.x},${transform.y}) scale(${transform.k})`);
+}
+
+function clampTransform() {
+  const vw = svg.clientWidth  || 960;
+  const vh = svg.clientHeight || 500;
+  const vbW = 960, vbH = 500;
+  const scaleX = vw / vbW, scaleY = vh / vbH;
+  const scale  = Math.min(scaleX, scaleY);
+  const scaledW = vbW * transform.k * scale;
+  const scaledH = vbH * transform.k * scale;
+  const maxX = 0, minX = vw - scaledW;
+  const maxY = 0, minY = vh - scaledH;
+  transform.x = Math.min(maxX, Math.max(minX, transform.x));
+  transform.y = Math.min(maxY, Math.max(minY, transform.y));
+}
+
+async function initMap() {
+  const coverageMap = buildCoverageMap();
+  updateStats(coverageMap);
+
+  // ocean background
+  const ocean = document.createElementNS('http://www.w3.org/2000/svg','rect');
+  ocean.setAttribute('width','960'); ocean.setAttribute('height','500');
+  ocean.setAttribute('fill', OCEAN_FILL);
+  svg.appendChild(ocean);
+
+  // group for all country paths (so we can pan/zoom it)
+  gEl = document.createElementNS('http://www.w3.org/2000/svg','g');
+  svg.appendChild(gEl);
+
+  // Fetch world TopoJSON
+  const res  = await fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json');
+  const world = await res.json();
+  const countries = topojson.feature(world, world.objects.countries);
+
+  // We need country names — fetch a name lookup
+  const nameRes  = await fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json');
+  // world-atlas doesn't ship names, so we use a separate lookup
+  const nameData = await fetch('https://cdn.jsdelivr.net/npm/visionscarto-world-atlas@0.1.0/world/110m.json')
+    .catch(() => null);
+
+  // Build id→name map from a simple embedded table (ISO numeric ids for common countries)
+  const ID_NAMES = {
+    4:"Afghanistan",8:"Albania",12:"Algeria",24:"Angola",32:"Argentina",36:"Australia",
+    40:"Austria",50:"Bangladesh",56:"Belgium",64:"Bhutan",68:"Bolivia",76:"Brazil",
+    100:"Bulgaria",116:"Cambodia",120:"Cameroon",124:"Canada",152:"Chile",156:"China",
+    170:"Colombia",188:"Costa Rica",191:"Croatia",192:"Cuba",196:"Cyprus",203:"Czechia",
+    208:"Denmark",214:"Dominican Republic",218:"Ecuador",818:"Egypt",222:"El Salvador",
+    231:"Ethiopia",246:"Finland",250:"France",276:"Germany",288:"Ghana",300:"Greece",
+    320:"Guatemala",332:"Haiti",340:"Honduras",348:"Hungary",356:"India",360:"Indonesia",
+    364:"Iran",368:"Iraq",372:"Ireland",376:"Israel",380:"Italy",388:"Jamaica",392:"Japan",
+    400:"Jordan",398:"Kazakhstan",404:"Kenya",410:"South Korea",418:"Laos",422:"Lebanon",
+    426:"Lesotho",430:"Liberia",434:"Libya",442:"Luxembourg",454:"Malawi",458:"Malaysia",
+    466:"Mali",484:"Mexico",496:"Mongolia",504:"Morocco",508:"Mozambique",516:"Namibia",
+    524:"Nepal",528:"Netherlands",554:"New Zealand",566:"Nigeria",578:"Norway",586:"Pakistan",
+    591:"Panama",600:"Paraguay",604:"Peru",608:"Philippines",616:"Poland",620:"Portugal",
+    630:"Puerto Rico",634:"Qatar",642:"Romania",643:"Russia",682:"Saudi Arabia",686:"Senegal",
+    694:"Sierra Leone",703:"Slovakia",705:"Slovenia",706:"Somalia",710:"South Africa",
+    724:"Spain",144:"Sri Lanka",729:"Sudan",752:"Sweden",756:"Switzerland",760:"Syria",
+    158:"Taiwan",762:"Tajikistan",764:"Thailand",792:"Türkiye",800:"Uganda",804:"Ukraine",
+    784:"UAE",826:"United Kingdom",840:"United States of America",858:"Uruguay",
+    860:"Uzbekistan",862:"Venezuela",704:"Vietnam",887:"Yemen",894:"Zambia",716:"Zimbabwe",
+    70:"Bosnia and Herzegovina",807:"North Macedonia",499:"Montenegro",688:"Serbia",
+    008:"Albania",51:"Armenia",31:"Azerbaijan",112:"Belarus",854:"Burkina Faso",
+    108:"Burundi",132:"Cabo Verde",140:"Central African Republic",148:"Chad",174:"Comoros",
+    180:"DR Congo",178:"Congo",262:"Djibouti",226:"Equatorial Guinea",232:"Eritrea",
+    748:"Eswatini",266:"Gabon",270:"Gambia",324:"Guinea",624:"Guinea-Bissau",384:"Ivory Coast",
+    408:"North Korea",414:"Kuwait",426:"Lesotho",430:"Liberia",478:"Mauritania",480:"Mauritius",
+    562:"Niger",646:"Rwanda",678:"São Tomé and Príncipe",706:"Somalia",728:"South Sudan",
+    768:"Togo",788:"Tunisia",834:"Tanzania",426:"Lesotho",981:"Kosovo",
+    242:"Fiji",296:"Kiribati",584:"Marshall Islands",583:"Micronesia",520:"Nauru",585:"Palau",
+    598:"Papua New Guinea",882:"Samoa",90:"Solomon Islands",776:"Tonga",798:"Tuvalu",
+    548:"Vanuatu",214:"Dominican Republic",218:"Ecuador",84:"Belize",44:"Bahamas",
+    52:"Barbados",212:"Dominica",308:"Grenada",659:"Saint Kitts and Nevis",
+    662:"Saint Lucia",670:"Saint Vincent and the Grenadines",740:"Suriname",
+    328:"Guyana",558:"Nicaragua",591:"Panama",32:"Argentina",
+    334:"Heard Island",10:"Antarctica",
+  };
+
+  // Build projection (Natural Earth)
+  const projection = d3.geoNaturalEarth1()
+    .scale(153)
+    .translate([480, 250]);
+  const path = d3.geoPath().projection(projection);
+
+  countries.features.forEach(feature => {
+    const id       = +feature.id;
+    const rawName  = ID_NAMES[id] || '';
+    const normKey  = normaliseName(rawName);
+    const tourList = coverageMap[normKey] || [];
+    const covered  = tourList.length > 0;
+
+    const pathEl = document.createElementNS('http://www.w3.org/2000/svg','path');
+    const d      = path(feature);
+    if (!d) return;
+
+    pathEl.setAttribute('d', d);
+    pathEl.setAttribute('fill',   covered ? COVERED_FILL : UNCOVERED_FILL);
+    pathEl.setAttribute('stroke', BORDER_COLOR);
+    pathEl.setAttribute('stroke-width', '0.5');
+    pathEl.style.transition = 'fill 0.15s';
+    pathEl.style.cursor     = covered ? 'pointer' : 'default';
+
+    // hover
+    pathEl.addEventListener('mouseenter', (e) => {
+      pathEl.setAttribute('fill', covered ? COVERED_HOVER : UNCOVERED_HOVER);
+      if (rawName) {
+        tooltip.innerHTML = covered
+          ? `<strong>${rawName}</strong> &nbsp;<span>${tourList.length} tour${tourList.length>1?'s':''}</span>`
+          : `<strong>${rawName}</strong> &nbsp;<span>No tours yet</span>`;
+        tooltip.classList.add('visible');
+      }
+    });
+
+    pathEl.addEventListener('mousemove', (e) => {
+      const rect = mapWrap.getBoundingClientRect();
+      tooltip.style.left = (e.clientX - rect.left) + 'px';
+      tooltip.style.top  = (e.clientY - rect.top)  + 'px';
+    });
+
+    pathEl.addEventListener('mouseleave', () => {
+      pathEl.setAttribute('fill', covered ? COVERED_FILL : UNCOVERED_FILL);
+      tooltip.classList.remove('visible');
+    });
+
+    // click
+    if (covered) {
+      pathEl.addEventListener('click', () => {
+        if (isDragging) return;
+        showPanel(rawName, tourList);
+      });
+    }
+
+    gEl.appendChild(pathEl);
+  });
+
+  /* ── Pan & Zoom ── */
+  svg.addEventListener('mousedown', (e) => {
+    dragStart = { x: e.clientX - transform.x, y: e.clientY - transform.y };
+    isDragging = false;
+  });
+
+  window.addEventListener('mousemove', (e) => {
+    if (!dragStart) return;
+    const dx = e.clientX - dragStart.x;
+    const dy = e.clientY - dragStart.y;
+    if (Math.abs(dx - transform.x) > 2 || Math.abs(dy - transform.y) > 2) isDragging = true;
+    transform.x = dx;
+    transform.y = dy;
+    applyTransform();
+  });
+
+  window.addEventListener('mouseup', () => { dragStart = null; });
+
+  svg.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const factor = e.deltaY < 0 ? 1.15 : 0.87;
+    const rect   = svg.getBoundingClientRect();
+    const mx     = (e.clientX - rect.left) / rect.width  * 960;
+    const my     = (e.clientY - rect.top)  / rect.height * 500;
+    transform.x  = mx - factor * (mx - transform.x);
+    transform.y  = my - factor * (my - transform.y);
+    transform.k  = Math.min(8, Math.max(1, transform.k * factor));
+    applyTransform();
+  }, { passive: false });
+
+  // touch pan
+  let lastTouch = null;
+  svg.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 1) lastTouch = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+  }, { passive: true });
+  svg.addEventListener('touchmove', (e) => {
+    if (e.touches.length === 1 && lastTouch) {
+      transform.x += e.touches[0].clientX - lastTouch.x;
+      transform.y += e.touches[0].clientY - lastTouch.y;
+      lastTouch = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      applyTransform();
+    }
+  }, { passive: true });
+
+  document.getElementById('zoomIn').onclick  = () => { transform.k = Math.min(8, transform.k * 1.3); applyTransform(); };
+  document.getElementById('zoomOut').onclick = () => { transform.k = Math.max(1, transform.k / 1.3); applyTransform(); };
+  document.getElementById('zoomReset').onclick = () => { transform = {x:0,y:0,k:1}; applyTransform(); };
+}
+
+initMap();
+</script>
+</body>
+</html>
