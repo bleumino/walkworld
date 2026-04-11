@@ -664,7 +664,7 @@ footer {
 [data-theme="dark"] .card-views,
 [data-theme="dark"] .featured-views,
 [data-theme="dark"] .modal-views {
-  color: rgba(0, 0, 0, 0.7);
+  color: rgba(255, 255, 255, 0.7);
 }
 
 [data-theme="dark"] .card-views strong,
@@ -684,8 +684,14 @@ footer {
   letter-spacing: 0.2px;
 }
 
+/* ============================================================
+   RANDOM TOUR (LIGHT + DARK THEME READY)
+   ============================================================ */
 
-/* ── RANDOM TOUR BUTTON & MODAL ── */
+/* ─────────────────────────────
+   BUTTON
+───────────────────────────── */
+
 .random-btn {
   font-family: 'DM Sans', sans-serif;
   font-size: 0.8rem;
@@ -693,57 +699,164 @@ footer {
   padding: 7px 16px;
   border-radius: 100px;
   border: 1px solid var(--border);
-  background: #fff;
+  background: var(--card-bg);
   color: var(--ink);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
 }
-.random-btn:hover { border-color: var(--rust); color: var(--rust); transform: scale(1.04); }
-.random-btn:active { transform: scale(0.97); }
-.random-dice { font-size: 14px; }
+
+.random-btn:hover {
+  border-color: var(--rust);
+  color: var(--rust);
+  transform: scale(1.04);
+}
+
+.random-btn:active {
+  transform: scale(0.97);
+}
+
+.random-dice {
+  font-size: 14px;
+}
+
+/* ─────────────────────────────
+   BACKDROP
+───────────────────────────── */
 
 .random-backdrop {
   display: none;
   position: fixed;
   inset: 0;
-  background: rgba(10,8,6,0.88);
+  background: rgba(0,0,0,0.75);
+  backdrop-filter: blur(6px);
   z-index: 1001;
   align-items: center;
   justify-content: center;
   padding: 1.5rem;
 }
-.random-backdrop.open { display: flex; animation: fadeIn 0.2s ease; }
+
+.random-backdrop.open {
+  display: flex;
+  animation: fadeIn 0.2s ease;
+}
+
+/* ─────────────────────────────
+   MODAL
+───────────────────────────── */
 
 .random-modal {
   width: 100%;
   max-width: 480px;
-  background: var(--ink);
-  border-radius: 12px;
-  padding: 2.5rem 2rem 2rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 2.5rem 2rem;
   position: relative;
-  animation: slideUp 0.25s ease;
   min-height: 280px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  animation: slideUp 0.25s ease;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.4);
 }
-.random-close { position: absolute; top: 1rem; right: 1rem; }
 
-.random-spinning { display: flex; flex-direction: column; align-items: center; gap: 1.25rem; text-align: center; }
-.random-globe { font-size: 5rem; line-height: 1; display: block; animation: globeSpin 0.6s linear infinite; }
-@keyframes globeSpin { 0% { transform: scale(1); } 50% { transform: scale(1.08); } 100% { transform: scale(1); } }
-.random-label { font-family: 'Playfair Display', serif; font-size: 1.1rem; font-style: italic; color: rgba(255,255,255,0.6); }
+.random-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  color: var(--muted);
+  cursor: pointer;
+}
 
-.random-result { display: flex; flex-direction: column; align-items: center; gap: 0.6rem; text-align: center; width: 100%; animation: fadeIn 0.3s ease; }
-.random-result-eyebrow { font-size: 0.65rem; font-weight: 500; letter-spacing: 2px; text-transform: uppercase; color: var(--rust); }
-.random-result-city { font-size: 0.8rem; font-weight: 500; letter-spacing: 1px; text-transform: uppercase; color: rgba(255,255,255,0.5); }
-.random-result-title { font-family: 'Playfair Display', serif; font-size: 1.2rem; color: #fff; line-height: 1.4; margin: 0.25rem 0; }
-.random-result-meta { font-size: 0.78rem; color: rgba(255,255,255,0.35); }
-.random-result-actions { display: flex; align-items: center; gap: 0.75rem; margin-top: 0.75rem; flex-wrap: wrap; justify-content: center; }
+/* ─────────────────────────────
+   SPINNER STATE
+───────────────────────────── */
+
+.random-spinning {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  text-align: center;
+}
+
+.random-globe {
+  font-size: 5rem;
+  line-height: 1;
+  animation: globeSpin 0.6s linear infinite;
+}
+
+@keyframes globeSpin {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+
+.random-label {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.1rem;
+  font-style: italic;
+  color: var(--muted);
+}
+
+/* ─────────────────────────────
+   RESULT STATE
+───────────────────────────── */
+
+.random-result {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  text-align: center;
+  width: 100%;
+  animation: fadeIn 0.3s ease;
+}
+
+.random-result-eyebrow {
+  font-size: 0.65rem;
+  font-weight: 500;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--rust);
+}
+
+.random-result-city {
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.random-result-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.2rem;
+  color: var(--ink);
+  line-height: 1.4;
+  margin: 0.25rem 0;
+}
+
+.random-result-meta {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+/* ─────────────────────────────
+   ACTIONS
+───────────────────────────── */
+
+.random-result-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
 
 .random-again-btn {
   font-family: 'DM Sans', sans-serif;
@@ -751,15 +864,48 @@ footer {
   font-weight: 500;
   padding: 7px 16px;
   border-radius: 100px;
-  border: 1px solid rgba(255,255,255,0.2);
+  border: 1px solid var(--border);
   background: transparent;
-  color: rgba(255,255,255,0.65);
+  color: var(--muted);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
 }
-.random-again-btn:hover { border-color: rgba(255,255,255,0.45); color: #fff; }
 
-@media (max-width: 480px) {
-  .random-modal { padding: 2rem 1.25rem 1.5rem; }
-  .random-globe { font-size: 4rem; }
+.random-again-btn:hover {
+  border-color: var(--rust);
+  color: var(--rust);
+  background: var(--rust-light);
+}
+
+/* ─────────────────────────────
+   ANIMATIONS
+───────────────────────────── */
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ─────────────────────────────
+   DARK MODE OVERRIDES
+───────────────────────────── */
+
+[data-theme="dark"] .random-modal {
+  background: #121212;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+[data-theme="dark"] .random-btn {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: #f2f2f2;
+}
+
+[data-theme="dark"] .random-backdrop {
+  background: rgba(0,0,0,0.75);
 }
