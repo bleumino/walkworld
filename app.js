@@ -266,6 +266,31 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape') { closeRandom(); closeModal(); }
 });
 
+
+
+/* ── THEME SYSTEM ─────────────────────────────────────────── */
+
+function initTheme() {
+  const saved = localStorage.getItem('theme');
+
+  if (saved) {
+    document.documentElement.setAttribute('data-theme', saved);
+  } else {
+    // optional: use system preference
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
+  }
+}
+
+function toggleTheme() {
+  const root = document.documentElement;
+  const current = root.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+  const next = current === 'dark' ? 'light' : 'dark';
+
+  root.setAttribute('data-theme', next);
+  localStorage.setItem('theme', next);
+}
+
 /* ── INIT ─────────────────────────────────────────────────── */
 render();
 updateStats();
