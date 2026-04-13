@@ -233,6 +233,96 @@
     }
     .stat-lbl { font-size: 0.72rem; color: var(--muted); letter-spacing: 0.5px; }
 
+
+    /* ── ISLAND PANEL ── */
+    .island-panel {
+      border-bottom: 1px solid var(--border);
+      background: var(--cream);
+    }
+    .island-panel-header {
+      padding: 1.25rem 3rem 0;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+    .island-panel-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--ink);
+      margin-right: 0.5rem;
+    }
+    .island-section {
+      padding: 1rem 3rem 1.5rem;
+    }
+    .island-section-label {
+      font-size: 0.65rem;
+      font-weight: 500;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 0.6rem;
+    }
+    .island-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .island-btn {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.78rem;
+      font-weight: 400;
+      padding: 6px 14px;
+      border-radius: 100px;
+      border: 1px solid var(--border);
+      background: var(--card-bg);
+      color: var(--muted);
+      cursor: default;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .island-btn.has-tours {
+      border-color: #b8d9c8;
+      background: #f0f8f4;
+      color: var(--ink);
+      font-weight: 500;
+      cursor: pointer;
+    }
+    .island-btn.has-tours:hover {
+      border-color: #1D9E75;
+      background: #e1f5ee;
+      transform: translateY(-1px);
+    }
+    .island-btn.has-tours.active {
+      background: var(--rust);
+      border-color: var(--rust);
+      color: #fff;
+    }
+    .island-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--border);
+      flex-shrink: 0;
+    }
+    .island-btn.has-tours .island-dot { background: #1D9E75; }
+    .island-btn.has-tours.active .island-dot { background: rgba(255,255,255,0.7); }
+    .island-count {
+      font-size: 0.65rem;
+      background: #1D9E75;
+      color: #fff;
+      border-radius: 100px;
+      padding: 1px 6px;
+    }
+    .island-btn.active .island-count { background: rgba(255,255,255,0.25); }
+
+    @media (max-width: 768px) {
+      .island-panel-header { padding: 1rem 1.25rem 0; }
+      .island-section { padding: 0.75rem 1.25rem 1.25rem; }
+    }
     @media (max-width: 768px) {
       .map-hero { padding: 2rem 1.25rem 1.5rem; }
       .tour-panel { padding: 1.5rem 1.25rem; }
@@ -298,6 +388,27 @@
   <div class="map-tooltip" id="mapTooltip"></div>
 </div>
 
+
+<!-- ISLAND NATIONS PANEL -->
+<div class="island-panel" id="islandPanel">
+  <div class="island-panel-header">
+    <span class="island-panel-title">🏝️ Island Nations</span>
+    <span style="font-size:0.78rem;color:var(--muted);">Small islands hard to click on the map — use these buttons instead</span>
+  </div>
+  <div class="island-section">
+    <p class="island-section-label">Caribbean</p>
+    <div class="island-grid" id="caribbeanGrid"></div>
+  </div>
+  <div class="island-section" style="padding-top:0;">
+    <p class="island-section-label">Oceania &amp; Pacific</p>
+    <div class="island-grid" id="oceaniaGrid"></div>
+  </div>
+  <div class="island-section" style="padding-top:0;">
+    <p class="island-section-label">Indian Ocean &amp; Atlantic</p>
+    <div class="island-grid" id="indianGrid"></div>
+  </div>
+</div>
+
 <!-- TOUR PANEL -->
 <div class="tour-panel" id="tourPanel">
   <div class="panel-placeholder" id="panelPlaceholder">
@@ -337,8 +448,8 @@
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/d3-geo@3/dist/d3-geo.min.js"></script>
 <script src="data.js"></script>
 <script src="app.js"></script>
 <script>
@@ -414,6 +525,7 @@ const NAME_MAP = {
   "marshall islands":            "marshall islands",
   "micronesia (federated states of)": "micronesia",
   "federated states of micronesia":   "micronesia",
+  "greenland":                   "greenland"
 };
 
 function normaliseName(name) {
@@ -501,6 +613,7 @@ function clampTransform() {
 async function initMap() {
   const coverageMap = buildCoverageMap();
   updateStats(coverageMap);
+  buildIslandPanel(coverageMap);
 
   // ocean background
   const ocean = document.createElementNS('http://www.w3.org/2000/svg','rect');
@@ -517,49 +630,247 @@ async function initMap() {
   const world = await res.json();
   const countries = topojson.feature(world, world.objects.countries);
 
-  // We need country names — fetch a name lookup
-  const nameRes  = await fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json');
-  // world-atlas doesn't ship names, so we use a separate lookup
-  const nameData = await fetch('https://cdn.jsdelivr.net/npm/visionscarto-world-atlas@0.1.0/world/110m.json')
-    .catch(() => null);
-
-  // Build id→name map from a simple embedded table (ISO numeric ids for common countries)
   const ID_NAMES = {
-    4:"Afghanistan",8:"Albania",12:"Algeria",24:"Angola",32:"Argentina",36:"Australia",
-    40:"Austria",50:"Bangladesh",56:"Belgium",64:"Bhutan",68:"Bolivia",76:"Brazil",
-    100:"Bulgaria",116:"Cambodia",120:"Cameroon",124:"Canada",152:"Chile",156:"China",
-    170:"Colombia",188:"Costa Rica",191:"Croatia",192:"Cuba",196:"Cyprus",203:"Czechia",
-    208:"Denmark",214:"Dominican Republic",218:"Ecuador",818:"Egypt",222:"El Salvador",
-    231:"Ethiopia",246:"Finland",250:"France",276:"Germany",288:"Ghana",300:"Greece",
-    320:"Guatemala",332:"Haiti",340:"Honduras",348:"Hungary",356:"India",360:"Indonesia",
-    364:"Iran",368:"Iraq",372:"Ireland",376:"Israel",380:"Italy",388:"Jamaica",392:"Japan",
-    400:"Jordan",398:"Kazakhstan",404:"Kenya",410:"South Korea",418:"Laos",422:"Lebanon",
-    426:"Lesotho",430:"Liberia",434:"Libya",442:"Luxembourg",454:"Malawi",458:"Malaysia",
-    466:"Mali",484:"Mexico",496:"Mongolia",504:"Morocco",508:"Mozambique",516:"Namibia",
-    524:"Nepal",528:"Netherlands",554:"New Zealand",566:"Nigeria",578:"Norway",586:"Pakistan",
-    591:"Panama",600:"Paraguay",604:"Peru",608:"Philippines",616:"Poland",620:"Portugal",
-    630:"Puerto Rico",634:"Qatar",642:"Romania",643:"Russia",682:"Saudi Arabia",686:"Senegal",
-    694:"Sierra Leone",703:"Slovakia",705:"Slovenia",706:"Somalia",710:"South Africa",
-    724:"Spain",144:"Sri Lanka",729:"Sudan",752:"Sweden",756:"Switzerland",760:"Syria",
-    158:"Taiwan",762:"Tajikistan",764:"Thailand",792:"Türkiye",800:"Uganda",804:"Ukraine",
-    784:"UAE",826:"United Kingdom",840:"United States of America",858:"Uruguay",
-    860:"Uzbekistan",862:"Venezuela",704:"Vietnam",887:"Yemen",894:"Zambia",716:"Zimbabwe",
-    70:"Bosnia and Herzegovina",807:"North Macedonia",499:"Montenegro",688:"Serbia",
-    8:"Albania",51:"Armenia",31:"Azerbaijan",112:"Belarus",854:"Burkina Faso",
-    108:"Burundi",132:"Cabo Verde",140:"Central African Republic",148:"Chad",174:"Comoros",
-    180:"DR Congo",178:"Congo",262:"Djibouti",226:"Equatorial Guinea",232:"Eritrea",
-    748:"Eswatini",266:"Gabon",270:"Gambia",324:"Guinea",624:"Guinea-Bissau",384:"Ivory Coast",
-    408:"North Korea",414:"Kuwait",426:"Lesotho",430:"Liberia",478:"Mauritania",480:"Mauritius",
-    562:"Niger",646:"Rwanda",678:"São Tomé and Príncipe",706:"Somalia",728:"South Sudan",
-    768:"Togo",788:"Tunisia",834:"Tanzania",426:"Lesotho",981:"Kosovo",
-    242:"Fiji",296:"Kiribati",584:"Marshall Islands",583:"Micronesia",520:"Nauru",585:"Palau",
-    598:"Papua New Guinea",882:"Samoa",90:"Solomon Islands",776:"Tonga",798:"Tuvalu",
-    548:"Vanuatu",214:"Dominican Republic",218:"Ecuador",84:"Belize",44:"Bahamas",
-    52:"Barbados",212:"Dominica",308:"Grenada",659:"Saint Kitts and Nevis",
-    662:"Saint Lucia",670:"Saint Vincent and the Grenadines",740:"Suriname",
-    328:"Guyana",558:"Nicaragua",591:"Panama",32:"Argentina",
-    334:"Heard Island",10:"Antarctica",
-  };
+  // =========================
+  // Europe
+  // =========================
+  8: "Albania",
+  20: "Andorra",
+  40: "Austria",
+  112: "Belarus",
+  56: "Belgium",
+  70: "Bosnia and Herzegovina",
+  100: "Bulgaria",
+  191: "Croatia",
+  196: "Cyprus",
+  203: "Czechia",
+  208: "Denmark",
+  233: "Estonia",
+  246: "Finland",
+  250: "France",
+  276: "Germany",
+  300: "Greece",
+  336: "Vatican City",
+  348: "Hungary",
+  352: "Iceland",
+  372: "Ireland",
+  380: "Italy",
+  428: "Latvia",
+  438: "Liechtenstein",
+  440: "Lithuania",
+  442: "Luxembourg",
+  492: "Monaco",
+  498: "Moldova",
+  499: "Montenegro",
+  528: "Netherlands",
+  578: "Norway",
+  616: "Poland",
+  620: "Portugal",
+  642: "Romania",
+  643: "Russia",
+  688: "Serbia",
+  703: "Slovakia",
+  705: "Slovenia",
+  724: "Spain",
+  752: "Sweden",
+  756: "Switzerland",
+  807: "North Macedonia",
+  804: "Ukraine",
+  826: "United Kingdom",
+
+  // Special Europe / islands
+  234: "Faroe Islands",
+  248: "Åland Islands",
+  304: "Greenland",
+  744: "Svalbard and Jan Mayen",
+  833: "Isle of Man",
+  831: "Guernsey",
+  832: "Jersey",
+  292: "Gibraltar",
+
+  // =========================
+  // Asia
+  // =========================
+  4: "Afghanistan",
+  51: "Armenia",
+  31: "Azerbaijan",
+  48: "Bahrain",
+  50: "Bangladesh",
+  64: "Bhutan",
+  96: "Brunei",
+  116: "Cambodia",
+  156: "China",
+  268: "Georgia",
+  356: "India",
+  360: "Indonesia",
+  364: "Iran",
+  368: "Iraq",
+  376: "Israel",
+  392: "Japan",
+  400: "Jordan",
+  398: "Kazakhstan",
+  408: "North Korea",
+  410: "South Korea",
+  414: "Kuwait",
+  417: "Kyrgyzstan",
+  418: "Laos",
+  422: "Lebanon",
+  458: "Malaysia",
+  462: "Maldives",
+  496: "Mongolia",
+  524: "Nepal",
+  586: "Pakistan",
+  608: "Philippines",
+  634: "Qatar",
+  682: "Saudi Arabia",
+  702: "Singapore",
+  144: "Sri Lanka",
+  760: "Syria",
+  158: "Taiwan",
+  762: "Tajikistan",
+  764: "Thailand",
+  792: "Türkiye",
+  795: "Turkmenistan",
+  784: "United Arab Emirates",
+  860: "Uzbekistan",
+  704: "Vietnam",
+  887: "Yemen",
+  512: "Oman",
+  275:"palestine state of",
+
+  // =========================
+  // Americas
+  // =========================
+  32: "Argentina",
+  533: "Aruba",
+  44: "Bahamas",
+  52: "Barbados",
+  84: "Belize",
+  68: "Bolivia",
+  76: "Brazil",
+  124: "Canada",
+  152: "Chile",
+  170: "Colombia",
+  188: "Costa Rica",
+  192: "Cuba",
+  212: "Dominica",
+  214: "Dominican Republic",
+  218: "Ecuador",
+  320: "Guatemala",
+  328: "Guyana",
+  332: "Haiti",
+  340: "Honduras",
+  388: "Jamaica",
+  484: "Mexico",
+  558: "Nicaragua",
+  591: "Panama",
+  600: "Paraguay",
+  604: "Peru",
+  630: "Puerto Rico",
+  740: "Suriname",
+  780: "Trinidad and Tobago",
+  858: "Uruguay",
+  840: "United States of America",
+  862: "Venezuela",
+  222:"el salvador",
+
+  // Caribbean / territories
+  659: "Saint Kitts and Nevis",
+  662: "Saint Lucia",
+  670: "Saint Vincent and the Grenadines",
+
+ // =========================
+// Africa (clean + no duplicates)
+// =========================
+12: "Algeria",
+24: "Angola",
+72: "Botswana",
+120: "Cameroon",
+132: "Cabo Verde",
+140: "Central African Republic",
+148: "Chad",
+174: "Comoros",
+178: "Congo",
+180: "DR Congo",
+262: "Djibouti",
+818: "Egypt",
+226: "Equatorial Guinea",
+232: "Eritrea",
+231: "Ethiopia",
+266: "Gabon",
+270: "Gambia",
+288: "Ghana",
+324: "Guinea",
+624: "Guinea-Bissau",
+404: "Kenya",
+426: "Lesotho",
+430: "Liberia",
+434: "Libya",
+450: "Madagascar",
+454: "Malawi",
+466: "Mali",
+504: "Morocco",
+480: "Mauritius",
+508: "Mozambique",
+478: "Mauritania",
+516: "Namibia",
+566: "Nigeria",
+646: "Rwanda",
+678: "São Tomé and Príncipe",
+686: "Senegal",
+690: "Seychelles",
+694: "Sierra Leone",
+706: "Somalia",
+710: "South Africa",
+728: "South Sudan",
+729: "Sudan",
+834: "Tanzania",
+768: "Togo",
+788: "Tunisia",
+800: "Uganda",
+894: "Zambia",
+716: "Zimbabwe",
+384:"Côte d'Ivoire",
+108:"burundi",
+748:"eswatini",
+
+
+  // =========================
+  // Oceania
+  // =========================
+  36: "Australia",
+  242: "Fiji",
+  296: "Kiribati",
+  584: "Marshall Islands",
+  583: "Micronesia",
+  520: "Nauru",
+  554: "New Zealand",
+  585: "Palau",
+  598: "Papua New Guinea",
+  882: "Samoa",
+  90: "Solomon Islands",
+  776: "Tonga",
+  798: "Tuvalu",
+  548: "Vanuatu",
+
+
+  // --- Asia missing fixes ---
+104: "Myanmar",
+408: "North Korea",
+626: "Timor-Leste",
+795: "Turkmenistan",
+860: "Uzbekistan",
+417: "Kyrgyzstan",
+762: "Tajikistan",
+
+// --- Europe microstates ---
+20: "Andorra",
+438: "Liechtenstein",
+674: "San Marino",
+
+// --- Caribbean missing ---
+28: "Antigua and Barbuda",
+};
 
   // Build projection (Natural Earth)
   const projection = d3.geoNaturalEarth1()
@@ -665,6 +976,65 @@ async function initMap() {
   document.getElementById('zoomIn').onclick  = () => { transform.k = Math.min(8, transform.k * 1.3); applyTransform(); };
   document.getElementById('zoomOut').onclick = () => { transform.k = Math.max(1, transform.k / 1.3); applyTransform(); };
   document.getElementById('zoomReset').onclick = () => { transform = {x:0,y:0,k:1}; applyTransform(); };
+}
+
+
+/* ── ISLAND NATIONS PANEL ── */
+const ISLAND_GROUPS = {
+  caribbean: [
+    "Antigua and Barbuda","Bahamas","Barbados","Cuba","Dominica",
+    "Dominican Republic","Grenada","Haiti","Jamaica","Puerto Rico",
+    "Saint Kitts and Nevis","Saint Lucia",
+    "Saint Vincent and the Grenadines","Trinidad and Tobago",
+  ],
+  oceania: [
+    "Fiji","Kiribati","Marshall Islands","Micronesia",
+    "Nauru","Palau","Samoa",
+    "Solomon Islands","Tonga","Tuvalu","Vanuatu",
+  ],
+  indian: [
+    "Cabo Verde","Comoros","Maldives","Mauritius","São Tomé and Príncipe",
+    "Seychelles","Greenland","Iceland","Malta","Cyprus",
+  ],
+};
+
+let activeIslandBtn = null;
+
+function buildIslandPanel(coverageMap) {
+  const sections = [
+    { key: 'caribbean', elId: 'caribbeanGrid' },
+    { key: 'oceania',   elId: 'oceaniaGrid'   },
+    { key: 'indian',    elId: 'indianGrid'     },
+  ];
+
+  sections.forEach(({ key, elId }) => {
+    const el = document.getElementById(elId);
+    if (!el) return;
+
+    el.innerHTML = ISLAND_GROUPS[key].map(name => {
+      const tourList = coverageMap[name.toLowerCase()] || [];
+      const hasTours = tourList.length > 0;
+      return `
+        <button class="island-btn ${hasTours ? 'has-tours' : ''}"
+          ${hasTours ? `onclick="clickIsland(this, '${name.replace(/'/g,"\'")}', ${JSON.stringify(tourList).replace(/"/g,'&quot;')})"` : ''}
+          title="${hasTours ? tourList.length + ' tour' + (tourList.length > 1 ? 's' : '') : 'No tours yet'}"
+        >
+          <span class="island-dot"></span>
+          ${name}
+          ${hasTours ? `<span class="island-count">${tourList.length}</span>` : ''}
+        </button>`;
+    }).join('');
+  });
+}
+
+function clickIsland(btn, countryName, tourList) {
+  // Toggle active style
+  if (activeIslandBtn) activeIslandBtn.classList.remove('active');
+  if (activeIslandBtn === btn) { activeIslandBtn = null; return; }
+  btn.classList.add('active');
+  activeIslandBtn = btn;
+
+  showPanel(countryName, tourList);
 }
 
 initMap();
