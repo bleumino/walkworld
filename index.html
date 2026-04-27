@@ -10,19 +10,29 @@
 <body>
 
   <!-- NAV -->
-  <nav>
-    <a href="#" class="logo">Walk<span>World</span></a>
-    <ul class="nav-links">
-      <li><a href="index.html" style="color:var(--ink)">Tours</a></li>
-      <li><a href="coverage.html">Coverage</a></li>
-      <li><a href="map.html">Map</a></li>
-      
-      <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle dark mode" title="Toggle dark mode">
-      <span class="icon-moon">🌙</span>
-      <span class="icon-sun">☀️</span>
-    </button>
-    </ul>
-  </nav>
+
+<nav id="mainNav">
+  <a href="index.html" class="logo">Walk<span>World</span></a>
+
+  <button class="menu-toggle"
+        onclick="toggleMenu()"
+        aria-expanded="false"
+        aria-controls="mainNav">
+  ☰
+</button>
+
+  <ul class="nav-links">
+    <li><a href="index.html">Tours</a></li>
+    <li><a href="map.html">Map</a></li>
+
+    <li><button class="theme-toggle" onclick="toggleTheme()">🌙</button></li>
+  </ul>
+</nav>
+
+
+<button id="backToTop" class="back-to-top" onclick="scrollToTop()">
+  Scroll to top ↑
+</button>
 
   <!-- HERO -->
   <section class="hero">
@@ -54,15 +64,33 @@
       <div class="blob blob-1"></div>
       <div class="blob blob-2"></div>
       <div class="blob blob-3"></div>
-      <div class="featured-card">
-        <p class="featured-label">🔥 Most watched right now</p>
-        <p class="featured-title">Tokyo Shibuya Crossing — Heavy Rain Backstreets Night Walk</p>
-        <div class="featured-meta">
-          <span class="featured-views"><strong>12.4M</strong> views · 45 min</span>
-          <button class="watch-pill" onclick="openModal(0)">
-            <span class="play-tri"></span> Watch now
-          </button>
-        </div>
+<div class="featured-card">
+
+  <div class="card-thumb" data-video="https://www.youtube.com/embed/VIDEO_ID?enablejsapi=1">
+    
+    <iframe class="card-video" src="" allow="autoplay; encrypted-media"></iframe>
+    
+    <div class="card-thumb-overlay"></div>
+
+  </div>
+
+  <p class="featured-label">🔥 Most watched right now</p>
+
+  <p class="featured-title">
+    Tokyo Shibuya Crossing — Heavy Rain Backstreets Night Walk
+  </p>
+
+  <div class="featured-meta">
+    <span class="featured-views">
+      <strong>12.4M</strong> views · 45 min
+    </span>
+
+    <button class="watch-pill" onclick="openModal(0)">
+      <span class="play-tri"></span> Watch now
+    </button>
+  </div>
+
+</div>
       </div>
     </div>
   </section>

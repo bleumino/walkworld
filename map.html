@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>World Map — WalkWorld</title>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
   <style>
     /* ── MAP PAGE STYLES ── */
     .map-hero {
@@ -124,8 +124,27 @@
       transform: translate(-50%, calc(-100% - 10px));
     }
     .map-tooltip.visible { opacity: 1; }
-    .map-tooltip strong { color: #fff; }
-    .map-tooltip span   { color: rgba(255,255,255,0.55); }
+  
+    .map-tooltip {
+  position: absolute;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.8rem;
+  padding: 10px 14px;
+  border-radius: 8px;
+  pointer-events: none;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.12s ease, transform 0.12s ease;
+  z-index: 10;
+  transform: translate(-50%, calc(-100% - 12px));
+  box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,0.08);
+
+  /* default = light mode */
+  background: rgba(20, 20, 20, 0.92);
+  color: #fff;
+}
 
     /* ── TOUR PANEL ── */
     .tour-panel {
@@ -329,6 +348,119 @@
       .stats-bar { flex-wrap: wrap; }
       .stat-item { min-width: 50%; }
     }
+
+/* ── DARK MODE FIXES (CLEAN + READABLE) ── */
+body.dark {
+  --map-ocean: #0b1a24;
+  --ink: #f5f5f5;
+  --muted: #b8b8b8;
+  --border: #2a2a2a;
+  --cream: #121212;
+  --card-bg: #1a1a1a;
+  --rust: #e07a4f;
+}
+
+/* island panel background */
+body.dark .island-panel {
+  background: #0f0f0f;
+}
+
+/* island header text */
+body.dark .island-panel-title {
+  color: var(--ink);
+}
+
+body.dark .island-section-label {
+  color: var(--muted);
+}
+
+body.dark .island-panel-header span {
+  color: var(--muted);
+}
+
+/* island buttons */
+body.dark .island-btn {
+  background: #1a1a1a;
+  border-color: #2a2a2a;
+  color: var(--muted);
+}
+
+body.dark .island-btn.has-tours {
+  background: #14251d;
+  border-color: #2f5f49;
+  color: #eaeaea;
+}
+
+body.dark .island-btn.has-tours.active {
+  background: var(--rust);
+  border-color: var(--rust);
+  color: #fff;
+}
+
+body.dark .island-count {
+  background: #2f5f49;
+}
+
+
+/*scrolling options*/
+.scroll-nav {
+  position: fixed;
+  right: 18px;
+  bottom: 90px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 999;
+}
+
+.scroll-nav button {
+  background: rgba(20,20,20,0.9);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.1);
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.8rem;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: transform 0.15s, background 0.15s;
+}
+
+.scroll-nav button:hover {
+  transform: translateY(-2px);
+  background: rgba(30,30,30,0.95);
+}
+
+.scroll-nav {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+}
+
+/*Tips for the scrolling options*/
+.tip-box {
+  position: fixed;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(20,20,20,0.92);
+  color: #fff;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.85rem;
+  padding: 10px 14px;
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+  backdrop-filter: blur(8px);
+  z-index: 1000;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.tip-box.hidden {
+  opacity: 0;
+  transform: translateX(-50%) translateY(-10px);
+  pointer-events: none;
+}
+
   </style>
 </head>
 <body>
@@ -338,8 +470,12 @@
   <a href="index.html" class="logo">Walk<span>World</span></a>
   <ul class="nav-links">
     <li><a href="index.html">Tours</a></li>
-    <li><a href="coverage.html">Coverage</a></li>
     <li><a href="map.html" style="color:var(--ink)">Map</a></li>
+
+     <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle dark mode" title="Toggle dark mode">
+      <span class="icon-moon">🌙</span>
+      <span class="icon-sun">☀️</span>
+    </button>
   </ul>
 </nav>
 
@@ -348,7 +484,7 @@
   <div>
     <p class="map-hero-eyebrow">Interactive map</p>
     <h1 class="map-hero-title">Walk the <em>whole world.</em></h1>
-    <p class="map-hero-desc">Click any highlighted country to see its walking tours. Green countries have at least one tour — keep adding to the collection to fill the map.</p>
+    <p class="map-hero-desc">This page shows a map of all of the countries in the world. Countires hihlighted orange has at least 1 walking tour for it, counties highlighted yellow has the most walking tours in the site.</p>
   </div>
   <div class="map-legend">
     <div class="legend-item"><div class="legend-swatch swatch-covered"></div> Has tours</div>
@@ -422,6 +558,18 @@
     </div>
     <div class="panel-grid" id="panelGrid"></div>
   </div>
+</div>
+
+<!-- Srolling options for better UX-->
+<div class="scroll-nav">
+  <button onclick="scrollToTop()">⬆ Top</button>
+  <button onclick="scrollToMap()">🗺 Map</button>
+  <button onclick="goToBottom()">⬇ Bottom</button>
+</div>
+
+<!--Tips for the scrolling options -->
+<div id="tipBox" class="tip-box hidden">
+  💡 Tip goes here
 </div>
 
 <!-- FOOTER -->
@@ -525,8 +673,19 @@ const NAME_MAP = {
   "marshall islands":            "marshall islands",
   "micronesia (federated states of)": "micronesia",
   "federated states of micronesia":   "micronesia",
-  "greenland":                   "greenland"
+  "greenland":                   "greenland",
+  "antarctica":                  "antarctica",
 };
+
+function getCountryGroup(key) {
+  for (const group in HIGHLIGHT_GROUPS) {
+    if (HIGHLIGHT_GROUPS[group].includes(key)) {
+      return group;
+    }
+  }
+  return null;
+}
+
 
 function normaliseName(name) {
   if (!name) return '';
@@ -590,6 +749,8 @@ const UNCOVERED_FILL = '#ddd8d0';
 const UNCOVERED_HOVER= '#c8c4bc';
 const OCEAN_FILL     = '#d6e8f5';
 const BORDER_COLOR   = '#fff';
+
+
 
 function applyTransform() {
   if (gEl) gEl.setAttribute('transform',
@@ -870,64 +1031,104 @@ async function initMap() {
 
 // --- Caribbean missing ---
 28: "Antigua and Barbuda",
+
+// --- Antarctica ---
+  10: "antarctica",
+
 };
+// ── Highlighted countries (always yellow) ──
+const HIGHLIGHT_COUNTRIES = new Set([
+  "france",
+  "spain",
+  "japan",
+  "australia",
+  "sweden",
+]);
 
-  // Build projection (Natural Earth)
-  const projection = d3.geoNaturalEarth1()
-    .scale(153)
-    .translate([480, 250]);
-  const path = d3.geoPath().projection(projection);
+// ── Projection ──
+const projection = d3.geoNaturalEarth1()
+  .scale(153)
+  .translate([480, 250]);
 
-  countries.features.forEach(feature => {
-    const id       = +feature.id;
-    const rawName  = ID_NAMES[id] || '';
-    const normKey  = normaliseName(rawName);
-    const tourList = coverageMap[normKey] || [];
-    const covered  = tourList.length > 0;
+const path = d3.geoPath().projection(projection);
 
-    const pathEl = document.createElementNS('http://www.w3.org/2000/svg','path');
-    const d      = path(feature);
-    if (!d) return;
+// ── Render countries ──
+countries.features.forEach(feature => {
+  const id      = +feature.id;
+  const rawName = ID_NAMES[id] || '';
+  const normKey = normaliseName(rawName);
 
-    pathEl.setAttribute('d', d);
-    pathEl.setAttribute('fill',   covered ? COVERED_FILL : UNCOVERED_FILL);
-    pathEl.setAttribute('stroke', BORDER_COLOR);
-    pathEl.setAttribute('stroke-width', '0.5');
-    pathEl.style.transition = 'fill 0.15s';
-    pathEl.style.cursor     = covered ? 'pointer' : 'default';
+  const tourList = coverageMap[normKey] || [];
+  const covered  = tourList.length > 0;
 
-    // hover
-    pathEl.addEventListener('mouseenter', (e) => {
-      pathEl.setAttribute('fill', covered ? COVERED_HOVER : UNCOVERED_HOVER);
-      if (rawName) {
-        tooltip.innerHTML = covered
-          ? `<strong>${rawName}</strong> &nbsp;<span>${tourList.length} tour${tourList.length>1?'s':''}</span>`
-          : `<strong>${rawName}</strong> &nbsp;<span>No tours yet</span>`;
-        tooltip.classList.add('visible');
-      }
-    });
+  const isHighlighted = HIGHLIGHT_COUNTRIES.has(normKey);
 
-    pathEl.addEventListener('mousemove', (e) => {
-      const rect = mapWrap.getBoundingClientRect();
-      tooltip.style.left = (e.clientX - rect.left) + 'px';
-      tooltip.style.top  = (e.clientY - rect.top)  + 'px';
-    });
+  const pathEl = document.createElementNS(
+    'http://www.w3.org/2000/svg',
+    'path'
+  );
 
-    pathEl.addEventListener('mouseleave', () => {
-      pathEl.setAttribute('fill', covered ? COVERED_FILL : UNCOVERED_FILL);
-      tooltip.classList.remove('visible');
-    });
+  const d = path(feature);
+  if (!d) return;
 
-    // click
-    if (covered) {
-      pathEl.addEventListener('click', () => {
-        if (isDragging) return;
-        showPanel(rawName, tourList);
-      });
+  pathEl.setAttribute('d', d);
+  pathEl.setAttribute('stroke', BORDER_COLOR);
+  pathEl.setAttribute('stroke-width', '0.5');
+  pathEl.style.transition = 'fill 0.15s';
+  pathEl.style.cursor = covered ? 'pointer' : 'default';
+
+  // ── Base fill ──
+  const baseFill = isHighlighted
+    ? "#ffd000" // 🟡 forced yellow
+    : (covered ? COVERED_FILL : UNCOVERED_FILL);
+
+  pathEl.setAttribute('fill', baseFill);
+
+  // ── Hover ──
+  pathEl.addEventListener('mouseenter', () => {
+    const hoverFill = isHighlighted
+      ? "#ffe066"
+      : (covered ? COVERED_HOVER : UNCOVERED_HOVER);
+
+    pathEl.setAttribute('fill', hoverFill);
+
+    if (rawName) {
+      tooltip.innerHTML = covered
+        ? `<strong>${rawName}</strong> &nbsp;<span>${tourList.length} tour${tourList.length > 1 ? 's' : ''}</span>`
+        : `<strong>${rawName}</strong> &nbsp;<span>No tours yet</span>`;
+
+      tooltip.classList.add('visible');
     }
-
-    gEl.appendChild(pathEl);
   });
+
+  // ── Mouse move tooltip ──
+  pathEl.addEventListener('mousemove', (e) => {
+    const rect = mapWrap.getBoundingClientRect();
+    tooltip.style.left = (e.clientX - rect.left) + 'px';
+    tooltip.style.top  = (e.clientY - rect.top) + 'px';
+  });
+
+  // ── Mouse leave ──
+  pathEl.addEventListener('mouseleave', () => {
+    const resetFill = isHighlighted
+      ? "#ffd000"
+      : (covered ? COVERED_FILL : UNCOVERED_FILL);
+
+    pathEl.setAttribute('fill', resetFill);
+    tooltip.classList.remove('visible');
+  });
+
+  // ── Click ──
+  if (covered) {
+    pathEl.addEventListener('click', () => {
+      if (isDragging) return;
+      showPanel(rawName, tourList);
+    });
+  }
+
+  gEl.appendChild(pathEl);
+});
+
 
   /* ── Pan & Zoom ── */
   svg.addEventListener('mousedown', (e) => {
@@ -958,6 +1159,17 @@ async function initMap() {
     transform.k  = Math.min(8, Math.max(1, transform.k * factor));
     applyTransform();
   }, { passive: false });
+
+if (!window.hasInteractedWithMap) {
+  window.hasInteractedWithMap = true;
+
+  showTip("✨ Click highlighted countries to explore tours.");
+
+  setTimeout(() => {
+    showTip("🗺 Scroll or drag the map. Hold Ctrl + scroll to zoom.");
+  }, 4500);
+}
+
 
   // touch pan
   let lastTouch = null;
@@ -1035,6 +1247,71 @@ function clickIsland(btn, countryName, tourList) {
   activeIslandBtn = btn;
 
   showPanel(countryName, tourList);
+}
+
+// Toggle dark mode
+function applyTheme(theme) {
+  const isDark = theme === 'dark';
+
+  document.body.classList.toggle('dark', isDark);
+
+  localStorage.setItem('theme', theme);
+
+  // optional but IMPORTANT for SVG/map consistency
+  document.documentElement.setAttribute('data-theme', theme);
+}
+
+function toggleTheme() {
+  const next = document.body.classList.contains('dark') ? 'light' : 'dark';
+  applyTheme(next);
+}
+
+(function initTheme() {
+  const saved = localStorage.getItem('theme') || 'light';
+  applyTheme(saved);
+})();
+
+//Scrolling options for better UX
+function scrollToTop() {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function goToBottom() {
+  window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+}
+
+function scrollToMap() {
+  const map = document.getElementById('mapWrap');
+  if (map) {
+    map.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+}
+
+
+window.addEventListener('scroll', () => {
+  const nav = document.querySelector('.scroll-nav');
+  if (window.scrollY > 200) {
+    nav.style.opacity = '1';
+    nav.style.pointerEvents = 'auto';
+  } else {
+    nav.style.opacity = '0';
+    nav.style.pointerEvents = 'none';
+  }
+});
+
+
+//tips for the scrolling options
+function showTip(message, duration = 4000) {
+  const tip = document.getElementById('tipBox');
+
+  tip.textContent = message;
+  tip.classList.remove('hidden');
+
+  clearTimeout(window.tipTimeout);
+
+  window.tipTimeout = setTimeout(() => {
+    tip.classList.add('hidden');
+  }, duration);
 }
 
 initMap();

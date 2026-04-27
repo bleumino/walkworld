@@ -20,10 +20,12 @@
 
 /* tours and ALL_COUNTRIES arrays live in data.js — load that file first */
 
+//Loading more smoothly
+document.documentElement.classList.add("is-loading");
 
 /* ── STATE ────────────────────────────────────────────────── */
 let currentFilter = 'all';
-let searchTerm    = '';
+let searchTerm    = ''
 
 /* ── HELPERS ──────────────────────────────────────────────── */
 function regionLabel(r) {
@@ -50,6 +52,11 @@ function filterTours() {
   searchTerm = document.getElementById('searchInput').value.toLowerCase();
   render();
 }
+
+function normalize(str) {
+  return (str || '').toLowerCase().trim();
+}
+
 
 /* ── RENDER GRID ──────────────────────────────────────────── */
 function render() {
@@ -103,6 +110,7 @@ function render() {
     </div>
   `).join('');
 }
+
 
 /* ── MODAL ────────────────────────────────────────────────── */
 function openModal(id) {
@@ -257,41 +265,120 @@ function closeRandom() {
   document.body.style.overflow = '';
 }
 
-function handleRandomBackdropClick(e) {
-  if (e.target === document.getElementById('randomBackdrop')) closeRandom();
+
+function spinRandomTour() {
+  const label = document.getElementById("randomLabel");
+  let i = 0;
+
+  const interval = setInterval(() => {
+    const random = tours[Math.floor(Math.random() * tours.length)];
+    label.textContent = random.city + " 🌍";
+    i++;
+    if (i > 12) {
+      clearInterval(interval);
+      showFinalTour(random);
+    }
+  }, 120);
 }
-
-// Also close on Escape (extend existing keydown listener)
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') { closeRandom(); closeModal(); }
-});
-
-
 
 /* ── THEME SYSTEM ─────────────────────────────────────────── */
 
 function initTheme() {
+  const root = document.documentElement;
   const saved = localStorage.getItem('theme');
 
+  let theme;
+
   if (saved) {
-    document.documentElement.setAttribute('data-theme', saved);
+    theme = saved;
   } else {
-    // optional: use system preference
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
+    theme = prefersDark ? 'dark' : 'light';
   }
+
+  root.setAttribute('data-theme', theme);
+  localStorage.setItem('theme', theme); // <-- important: ensure persistence always exists
 }
 
 function toggleTheme() {
   const root = document.documentElement;
-  const current = root.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+
+  const current = root.getAttribute('data-theme') || 'light';
   const next = current === 'dark' ? 'light' : 'dark';
 
   root.setAttribute('data-theme', next);
   localStorage.setItem('theme', next);
 }
 
+
+
+
+/* ── BACK TO TOP BUTTON ────────────────────────────────────── */
+const backToTopBtn = document.getElementById('backToTop');
+
+// show/hide button on scroll
+window.addEventListener('scroll', () => {
+  if (window.scrollY > 400) {
+    backToTopBtn.classList.add('show');
+  } else {
+    backToTopBtn.classList.remove('show');
+  }
+});
+
+// smooth scroll to top
+function scrollToTop() {
+  window.scrollTo({
+    top: 0,
+    behavior: 'smooth'
+  });
+}
+
+
+window.addEventListener("scroll", () => {
+  const btn = document.getElementById("backToTop");
+  btn.classList.toggle("show", window.scrollY > 300);
+});
+
+
+function scrollToTours() {
+  document.getElementById("toursSection")
+    .scrollIntoView({ behavior: "smooth" });
+}
+
+
+window.addEventListener("load", () => {
+  requestAnimationFrame(() => {
+    document.documentElement.classList.remove("is-loading");
+  });
+});
+
+// Card hover video preview
+const cards = document.querySelectorAll('.card-thumb');
+
+cards.forEach(card => {
+  const iframe = card.querySelector('.card-video');
+  const videoUrl = card.dataset.video;
+
+  card.addEventListener('mouseenter', () => {
+    if (!videoUrl) return;
+
+    card.classList.add('playing');
+
+    // autoplay on hover
+    iframe.src = videoUrl + "&autoplay=1&mute=1";
+  });
+
+  card.addEventListener('mouseleave', () => {
+    card.classList.remove('playing');
+
+    // stop video completely
+    iframe.src = "";
+  });
+});
+
 /* ── INIT ─────────────────────────────────────────────────── */
+initTheme();
+
 render();
 updateStats();
 updateFeaturedCard();
