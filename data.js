@@ -240,10 +240,8 @@ const tours = [
   { id:225, title:"SEVILLA Walking Tour 2025 | Spain Immersive Walk for Big TVs [4K/60fps]", city:"SEVILLA", country:"Spain", region:"europe", views:"36,955", duration:"3 hr and 1 min", trending:false, emoji:"🇪🇸➡️", color:"#2a1f10", videoId:"QVkVZlf1TSM", url:"https://www.youtube.com/watch?v=QVkVZlf1TSM" },
   { id:226, title:"MALAGA Walking Tour | Spain Immersive Walk for Big TVs [4K/60fps]", city:"MALAGA", country:"Spain", region:"europe", views:"7,581", duration:"2 hr and 17 min", trending:false, emoji:"🇪🇸⬇️", color:"#2a1f10", videoId:"U_W-ykWsgOA", url:"https://www.youtube.com/watch?v=U_W-ykWsgOA" },
   { id:227, title:"🇪🇸 Relaxing 4K Walking Tour in Bilbao, Spain | Calm City Stroll with Ambient Sounds", city:"Bilbao", country:"Spain", region:"europe", views:"9,638 ", duration:"54 min", trending:false, emoji:"🇪🇸⬆️", color:"#2a1f10", videoId:"Lsg4QREotek", url:"https://www.youtube.com/watch?v=Lsg4QREotek" },
-  
   { id:228, title:"🇪🇸[4K] ZARAGOZA Walking Tour | This Spanish city has one of the most IMPRESSIVE cathedrals in Europe", city:"Zaragoza", country:"Spain", region:"europe", views:"604", duration:"1 hr and 11 min", trending:false, emoji:"🇪🇸⬆️", color:"#2a1f10", videoId:"FOP_qbWND2Q", url:"https://www.youtube.com/watch?v=FOP_qbWND2Q" },
   { id:229, title:"Las Palmas Gran Canaria Street Walk | Shopping Districts & Beaches 4K", city:"Las Palma", country:"Spain", region:"europe", views:"5,867 ", duration:"39 min", trending:false, emoji:"🇪🇸🏝️", color:"#2a1f10", videoId:"tPST5idm2M0", url:"https://www.youtube.com/watch?v=ntPST5idm2M0" },
-  
   { id:230, title:"🌴Walking Through Palma de Mallorca/ Explore the Heart of Mallorca’s Capital in 4K", city:"Palma de Mallorca", country:"Spain", region:"europe", views:"10,306 ", duration:"27 min", trending:false, emoji:"🇪🇸➡️", color:"#2a1f10", videoId:"AiyYyem43N4", url:"https://www.youtube.com/watch?v=AiyYyem43N4" },
   { id:231, title:"Evening Kawasaki Walking Tour - Kanagawa Japan [4K/Binaural]", city:" Kawasaki", country:"Japan", region:"asia", views:"27,091", duration:"53 min", trending:false, emoji:"🇯🇵➡️", color:"#2a1f10", videoId:"dCjqn8vLqzQ", url:"https://www.youtube.com/watch?v=dCjqn8vLqzQ" },
   { id:232, title:"【4K】Japan Walking Tour - Relaxing Walk in Nagoya, Aichi", city:"Nagoya", country:"Japan", region:"asia", views:"4,495  ", duration:"30 min", trending:false, emoji:"🇯🇵🏙️", color:"#2a1f10", videoId:"eMHNWgtojfI", url:"https://www.youtube.com/watch?v=eMHNWgtojfI" },
@@ -255,6 +253,10 @@ const tours = [
   { id:238, title:"4k Walk Noosa Australia 🇦🇺 Hastings Street Noosa Queensland Beach", city:"Noosa", country:"Australia", region:"oceania", views:"5,880 ", duration:"29 min", trending:false, emoji:"🇦🇺☀️", color:"#2a1f10", videoId:"prgYbzGz3AA", url:"https://www.youtube.com/watch?v=prgYbzGz3AA" },
   { id:239, title:"Spring Time at Noble Park, Melbourne, Victoria, Australia || Walk Tour", city:"Melbourne", country:"Australia", region:"oceania", views:"1,569 ", duration:"20 min", trending:false, emoji:"🇦🇺📦", color:"#2a1f10", videoId:"5o__6aCLS3s", url:"https://www.youtube.com/watch?v=5o__6aCLS3s" },
   { id:240, title:"【Darwin CBD Walking Tour (4K) | Dry Season | Northern Territory, Australia 🇦🇺", city:"Darwin", country:"Australia", region:"oceania", views:"7,599", duration:"1 hour", trending:false, emoji:"🐊🇦🇺", color:"#2a1f10", videoId:"i41BCToWvTQ", url:"https://www.youtube.com/watch?v=i41BCToWvTQ" },
+  { id:241, title:"Sweden Walks: Walking in -30° C | Arctic Circle Walk | Life In Nordics | Lapland | Abisko | 4K", city:"Abisko", country:"sweden", region:"europe", views:"202", duration:"8 min", trending:false, emoji:"🇸🇪🎅🏻", color:"#2a1f10", videoId:"jyUO1GE_APU", url:"https://www.youtube.com/watch?v=jyUO1GE_APU" },
+  { id:242, title:"Walking Through Snowy Borås ❄️ Real Winter City Walk | 4K 🇸🇪", city:"Borås", country:"sweden", region:"europe", views:"854", duration:"26 min", trending:false, emoji:"🇸🇪", color:"#2a1f10", videoId:"claQjEypOQ4", url:"https://www.youtube.com/watch?v=claQjEypOQ4" },
+  { id:243, title:"Freetown, Sierra Leone, City walking tour", city:"Freetown", country:"Sierra Leone", region:"africa", views:"108,878 ", duration:"57 min", trending:false, emoji:"🇸🇱", color:"#2a1f10", videoId:"1GSWEc7Y1-8", url:"https://www.youtube.com/watch?v=1GSWEc7Y1-8" },
+ 
 
 
 
