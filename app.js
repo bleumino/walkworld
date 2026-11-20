@@ -69,7 +69,8 @@ function regionLabel(region) {
     americas: "Americas",
     middleeast: "Middle East",
     africa: "Africa",
-    oceania: "Oceania"
+    oceania: "Oceania",
+    antarctica: "Antarctica"
   };
 
   return labels[region] || region || "Other";
@@ -97,6 +98,21 @@ function parseViews(value) {
 // Some videoId values in data.js carry extras like "abc123&t=6s".
 function cleanVideoId(id) {
   return String(id || "").split(/[&?#]/)[0].trim();
+}
+
+// The "Open in YouTube" link is built from the videoId, so a typo in a tour's
+// url field (like a missing "=") can't send people to the YouTube home page.
+// A start time (&t=405s) from the url is kept.
+function tourWatchUrl(tour) {
+  const id = cleanVideoId(tour.videoId);
+
+  if (/^[A-Za-z0-9_-]{11}$/.test(id)) {
+    const start = String(tour.url || "").match(/[?&]t=(\d+s?)/);
+
+    return `https://www.youtube.com/watch?v=${id}${start ? `&t=${start[1]}` : ""}`;
+  }
+
+  return tour.url || "#";
 }
 
 function setText(selector, value) {
@@ -234,13 +250,19 @@ function setFilter(region, btn) {
   updateMapMarkers();
 }
 
+let searchDebounce = null;
+
 function filterTours() {
-  const input = document.getElementById("searchInput");
+  clearTimeout(searchDebounce);
 
-  searchTerm = normalize(input?.value);
+  searchDebounce = setTimeout(() => {
+    const input = document.getElementById("searchInput");
 
-  render();
-  updateMapMarkers();
+    searchTerm = normalize(input?.value);
+
+    render();
+    updateMapMarkers();
+  }, 180);
 }
 
 
@@ -288,7 +310,7 @@ function render() {
       : "";
 
     return `
-      <article class="card" data-card-id="${escapeHTML(t.id)}" style="animation-delay:${i * 0.04}s">
+      <article class="card" data-card-id="${escapeHTML(t.id)}" style="${i < 12 ? `animation-delay:${i * 0.04}s` : "animation:none"}">
 
         <div
           class="card-thumb"
@@ -297,15 +319,6 @@ function render() {
           ${videoPreview}
         >
 
-          ${t.videoId ? `
-            <iframe
-              class="card-video"
-              title="Tour preview"
-              allow="autoplay; encrypted-media"
-              loading="lazy"
-              style="pointer-events:none"
-            ></iframe>
-          ` : ""}
 
           <div class="card-thumb-bg">
             ${escapeHTML(t.emoji || "🌍")}
@@ -403,47 +416,63 @@ function initCardInteractions() {
     openModal(target.dataset.tourId);
   });
 
-  // Hovering a card lights up its pin on the map.
+  // Pin highlight on hover, plus the video preview (loaded only after the
+  // pointer rests on a thumbnail for a moment, so scrolling past is free).
+  let previewTimer = null;
+
+  function stopPreview(thumb) {
+    clearTimeout(previewTimer);
+    previewTimer = null;
+
+    thumb?.classList.remove("playing");
+    thumb?.querySelector(".card-video")?.remove();
+  }
+
   grid.addEventListener("mouseover", event => {
     const card = event.target.closest(".card");
 
-    if (!card || card.contains(event.relatedTarget)) return;
+    if (card && !card.contains(event.relatedTarget)) {
+      setPinActive(card.dataset.cardId, true);
+    }
 
-    setPinActive(card.dataset.cardId, true);
+    const thumb = event.target.closest(".card-thumb");
+
+    if (!thumb || thumb.contains(event.relatedTarget)) return;
+
+    const videoUrl = thumb.dataset.video;
+
+    if (!videoUrl) return;
+
+    clearTimeout(previewTimer);
+
+    previewTimer = setTimeout(() => {
+      if (thumb.querySelector(".card-video")) return;
+
+      const iframe = document.createElement("iframe");
+
+      iframe.className = "card-video";
+      iframe.title = "Tour preview";
+      iframe.allow = "autoplay; encrypted-media";
+      iframe.style.pointerEvents = "none";
+      iframe.src = `${videoUrl}&autoplay=1&mute=1`;
+
+      thumb.prepend(iframe);
+      thumb.classList.add("playing");
+    }, 350);
   });
 
   grid.addEventListener("mouseout", event => {
     const card = event.target.closest(".card");
 
-    if (!card || card.contains(event.relatedTarget)) return;
+    if (card && !card.contains(event.relatedTarget)) {
+      setPinActive(card.dataset.cardId, false);
+    }
 
-    setPinActive(card.dataset.cardId, false);
-  });
+    const thumb = event.target.closest(".card-thumb");
 
-  grid.addEventListener("mouseover", event => {
-    const card = event.target.closest(".card-thumb");
+    if (!thumb || thumb.contains(event.relatedTarget)) return;
 
-    if (!card || card.contains(event.relatedTarget)) return;
-
-    const videoUrl = card.dataset.video;
-    const iframe = card.querySelector(".card-video");
-
-    if (!videoUrl || !iframe) return;
-
-    card.classList.add("playing");
-    iframe.src = `${videoUrl}&autoplay=1&mute=1`;
-  });
-
-  grid.addEventListener("mouseout", event => {
-    const card = event.target.closest(".card-thumb");
-
-    if (!card || card.contains(event.relatedTarget)) return;
-
-    card.classList.remove("playing");
-
-    const iframe = card.querySelector(".card-video");
-
-    if (iframe) iframe.removeAttribute("src");
+    stopPreview(thumb);
   });
 }
 
@@ -474,7 +503,7 @@ function openModal(id) {
     viewsEl.textContent = `${tour.views} views · ${tour.duration}`;
   }
 
-  if (ytLink) ytLink.href = tour.url || "#";
+  if (ytLink) ytLink.href = tourWatchUrl(tour);
 
   if (tour.videoId) {
     const iframe = document.createElement("iframe");
@@ -496,7 +525,7 @@ function openModal(id) {
         <p class="placeholder-title">${escapeHTML(tour.title)}</p>
         <p>No direct video embed is available yet.</p>
         <a
-          href="${escapeHTML(tour.url || "#")}"
+          href="${escapeHTML(tourWatchUrl(tour))}"
           target="_blank"
           rel="noopener noreferrer"
         >
@@ -1328,8 +1357,11 @@ function initMap() {
     minZoom: 2,
     maxZoom: 12,
     worldCopyJump: true,
-    scrollWheelZoom: true
+    scrollWheelZoom: true,
+    zoomControl: false
   });
+
+  L.control.zoom({ position: "bottomright" }).addTo(worldMap);
 
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     attribution:
@@ -1678,6 +1710,8 @@ function showCountryPanel(country) {
 }
 
 function closeCountryPanel() {
+  worldMap?.closePopup();
+
   const panel = document.getElementById("countryPanel");
 
   if (!panel) return;

@@ -1,0 +1,244 @@
+/* ============================================================
+   WALKWORLD — immersive.css
+   Full-window map with a fixed tour list on the left.
+
+   Loaded AFTER styles.css, so it overrides the old layout.
+   To go back to the old layout, remove the <link> to this file.
+   ============================================================ */
+
+:root {
+  --ww-nav-h: 60px;
+  --ww-sidebar-w: clamp(340px, 30vw, 440px);
+}
+
+/* ── Page frame: nothing scrolls except the tour list ───────── */
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+body #mainNav {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 900;
+  box-sizing: border-box;
+  height: var(--ww-nav-h);
+  padding: 0 22px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* position: fixed + z-index also keeps Leaflet's own (very high)
+   z-indexes inside the map, so the modals always sit above it. */
+body main.explorer-layout {
+  position: fixed;
+  inset: var(--ww-nav-h) 0 0 0;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: var(--ww-sidebar-w) minmax(0, 1fr);
+  margin: 0;
+  padding: 0;
+  max-width: none;
+}
+
+/* ── Left column: search + filters stay put, the list scrolls ── */
+
+body .tour-sidebar {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  width: auto;
+  height: 100%;
+  min-height: 0;
+  margin: 0;
+  overflow: hidden;
+  box-shadow: 6px 0 28px rgba(0, 0, 0, 0.28);
+}
+
+body .tour-sidebar > * {
+  flex: none;
+}
+
+.sidebar-top {
+  display: flex;
+  gap: 8px;
+  padding: 14px 14px 10px;
+}
+
+.sidebar-top .sidebar-search {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.sidebar-top .search-input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.sidebar-top .random-btn {
+  flex: none;
+  width: auto;
+  margin: 0;
+  padding-left: 14px;
+  padding-right: 14px;
+  white-space: nowrap;
+}
+
+/* Filters become one swipeable row instead of three wrapped lines */
+body .sidebar-filters {
+  margin: 0;
+  padding: 0 14px 10px;
+}
+
+body .sidebar-filters .filter-label {
+  display: none;
+}
+
+body .sidebar-filters .filter-buttons {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+}
+
+body .sidebar-filters .filter-buttons::-webkit-scrollbar {
+  display: none;
+}
+
+body .sidebar-filters .filter-btn {
+  flex: none;
+  white-space: nowrap;
+}
+
+body .sidebar-tour-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin: 0;
+  padding: 8px 16px 8px;
+}
+
+body .sidebar-tour-heading h2 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+/* The list itself */
+body .tour-sidebar > .grid {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+  padding: 4px 14px 28px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+
+/* ── Right side: the map fills everything ───────────────────── */
+
+body .world-section {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  max-width: none;
+  overflow: hidden;
+}
+
+body .world-section .map-canvas {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  border-radius: 0;
+}
+
+body #worldMap {
+  width: 100%;
+  height: 100%;
+  border-radius: 0;
+}
+
+/* Small count chip floating on the map */
+.map-chip {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  z-index: 800;
+  transform: translateX(-50%);
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: rgba(14, 20, 34, 0.8);
+  color: #f2f5ff;
+  font-size: 0.85rem;
+  pointer-events: none;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.map-chip strong {
+  font-weight: 700;
+}
+
+/* Dark mode: darken the map tiles so the map matches the site.
+   (Pins, popups and controls are not affected.) */
+:root[data-theme="dark"] .leaflet-tile-pane {
+  filter: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.88)
+    saturate(0.7);
+}
+
+/* Popups follow the theme */
+:root[data-theme="dark"] .leaflet-popup-content-wrapper,
+:root[data-theme="dark"] .leaflet-popup-tip {
+  background: #1b2438;
+  color: #e9eefc;
+}
+
+/* Not needed any more */
+.back-to-top {
+  display: none !important;
+}
+
+/* ── Phones and narrow windows: map on top, list underneath ─── */
+
+@media (max-width: 820px) {
+  :root {
+    --ww-nav-h: 54px;
+  }
+
+  body main.explorer-layout {
+    grid-template-columns: 1fr;
+    grid-template-rows: 42% minmax(0, 1fr);
+  }
+
+  body .world-section {
+    order: -1;
+  }
+
+  body .tour-sidebar {
+    box-shadow: 0 -6px 24px rgba(0, 0, 0, 0.28);
+  }
+
+  .map-chip {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ww-map-marker .ww-map-pin {
+    transition: none;
+  }
+}
