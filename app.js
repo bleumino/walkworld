@@ -28,6 +28,8 @@ let mapMarkers = [];
 let selectedCountry = null;
 
 const markerById = new Map();
+let markerLayer = null;
+let activePinEl = null;
 let selectedTourId = null;
 
 const DEFAULT_PANEL_HTML =
@@ -330,6 +332,8 @@ function render() {
             <div class="thumb-play-tri"></div>
           </div>
 
+          <span class="card-visited-tag">Visited</span>
+
           <div class="card-badge-wrap">
             ${t.trending
               ? '<span class="badge badge-trending">Trending</span>'
@@ -388,6 +392,7 @@ function render() {
   }).join("");
 
   applySelectedCard();
+  applyVisitedAll();
 }
 
 
@@ -413,7 +418,7 @@ function initCardInteractions() {
 
     if (!target) return;
 
-    openModal(target.dataset.tourId);
+    travelToTour(target.dataset.tourId);
   });
 
   // Pin highlight on hover, plus the video preview (loaded only after the
@@ -537,6 +542,10 @@ function openModal(id) {
 
   modal.classList.add("open");
   document.body.style.overflow = "hidden";
+
+  openTourId = String(tour.id);
+  markVisited(tour.id);
+  loadLocalNow(tour);
 }
 
 function closeModal() {
@@ -544,6 +553,10 @@ function closeModal() {
   const videoEl = document.getElementById("modalVideo");
 
   modal?.classList.remove("open");
+
+  clearInterval(nowTimer);
+  nowAbort?.abort();
+  openTourId = null;
 
   if (videoEl) videoEl.replaceChildren();
 
@@ -696,7 +709,7 @@ function spinAgain() {
     if (watchBtn) {
       watchBtn.onclick = () => {
         closeRandom();
-        openModal(pick.id);
+        travelToTour(pick.id);
       };
     }
 
@@ -1369,6 +1382,21 @@ function initMap() {
     maxZoom: 19
   }).addTo(worldMap);
 
+  // Nearby pins merge into numbered clusters at world zoom. If the plugin
+  // failed to load, fall back to a plain layer so every pin still shows.
+  markerLayer =
+    typeof L.markerClusterGroup === "function"
+      ? L.markerClusterGroup({
+          showCoverageOnHover: false,
+          maxClusterRadius: 55,
+          disableClusteringAtZoom: 9,
+          chunkedLoading: true,
+          iconCreateFunction: createClusterIcon
+        })
+      : L.layerGroup();
+
+  markerLayer.addTo(worldMap);
+
   worldMap.on("click", closeCountryPanel);
 
   // Closing the popup's own X also closes the tour list. The short delay
@@ -1376,6 +1404,8 @@ function initMap() {
   // (the old popup closes just before the new one opens).
   worldMap.on("popupclose", () => {
     setTimeout(() => {
+      if (journeyActive) return;
+
       if (!document.querySelector(".leaflet-popup")) {
         closeCountryPanel();
         clearSelectedTour();
@@ -1410,20 +1440,41 @@ function markerEmoji(tour) {
   ) || "📍";
 }
 
-function createTourMarker(tour, coordinates) {
-  const icon = L.divIcon({
-    className: "ww-map-marker",
+function buildPinIcon(tour, visited) {
+  return L.divIcon({
+    className: visited ? "ww-map-marker ww-pin-visited" : "ww-map-marker",
     html: `
       <div class="ww-map-pin">
         <span>${escapeHTML(markerEmoji(tour))}</span>
       </div>
     `,
-    iconSize: [36, 42],
-    iconAnchor: [18, 38],
-    popupAnchor: [0, -38]
+    iconSize: [44, 52],
+    iconAnchor: [22, 50],
+    popupAnchor: [0, -50]
   });
+}
+
+function createClusterIcon(cluster) {
+  const count = cluster.getChildCount();
+  const size = count < 5 ? "small" : count < 15 ? "medium" : "large";
+  const px = size === "small" ? 40 : size === "medium" ? 48 : 58;
+
+  return L.divIcon({
+    className: "ww-cluster-wrap",
+    html: `<div class="ww-cluster ww-cluster-${size}"><span>${count}</span></div>`,
+    iconSize: [px, px]
+  });
+}
+
+function createTourMarker(tour, coordinates) {
+  const visited = isVisited(tour.id);
+  const icon = buildPinIcon(tour, visited);
 
   const marker = L.marker(coordinates, { icon, riseOnHover: true });
+
+  // Kept so the pin can be redrawn when its visited state changes.
+  marker._wwTour = tour;
+  marker._wwVisited = visited;
 
   marker.bindPopup(`
     <div class="ww-popup">
@@ -1439,7 +1490,7 @@ function createTourMarker(tour, coordinates) {
     event.popup
       .getElement()
       ?.querySelector("[data-watch]")
-      ?.addEventListener("click", () => openModal(tour.id));
+      ?.addEventListener("click", () => travelToTour(tour.id));
   });
 
   // Clicking a pin opens its popup (Leaflet does that itself) and scrolls
@@ -1477,8 +1528,27 @@ function setPinActive(id, active) {
 
   if (!marker) return;
 
-  marker.getElement()?.classList.toggle("ww-pin-active", active);
+  activePinEl?.classList.remove("ww-pin-active");
+  activePinEl = null;
+
+  if (active) {
+    // If the pin is inside a cluster, light up the cluster instead.
+    const shown = markerLayer?.getVisibleParent?.(marker) || marker;
+
+    activePinEl = shown.getElement?.() || null;
+    activePinEl?.classList.add("ww-pin-active");
+  }
+
   marker.setZIndexOffset(active ? 1000 : 0);
+}
+
+// Opens up whatever cluster is hiding a pin, then runs the callback.
+function revealMarker(marker, callback) {
+  if (markerLayer?.zoomToShowLayer && markerLayer.hasLayer(marker)) {
+    markerLayer.zoomToShowLayer(marker, callback);
+  } else {
+    callback();
+  }
 }
 
 // Scrolls whichever ancestor actually scrolls the list (a sidebar, or the page).
@@ -1563,17 +1633,19 @@ function selectTour(id, { scroll = false, fly = false, popup = false } = {}) {
     });
 
     if (popup) {
-      worldMap.once("moveend", () => marker.openPopup());
+      worldMap.once("moveend", () => {
+        revealMarker(marker, () => marker.openPopup());
+      });
     }
   } else if (popup) {
-    marker.openPopup();
+    revealMarker(marker, () => marker.openPopup());
   }
 }
 
 function updateMapMarkers() {
   if (!worldMap || typeof L === "undefined") return;
 
-  mapMarkers.forEach(marker => worldMap.removeLayer(marker));
+  markerLayer?.clearLayers();
   mapMarkers = [];
   markerById.clear();
 
@@ -1608,10 +1680,15 @@ function updateMapMarkers() {
 
     const marker = createTourMarker(tour, coordinates);
 
-    marker.addTo(worldMap);
     mapMarkers.push(marker);
     markerById.set(String(tour.id), marker);
   });
+
+  if (markerLayer?.addLayers) {
+    markerLayer.addLayers(mapMarkers);
+  } else {
+    mapMarkers.forEach(marker => markerLayer?.addLayer(marker));
+  }
 
   setText("#mapVisibleCount", mapMarkers.length);
 
@@ -1633,8 +1710,309 @@ function initMapControls() {
   });
 
   document.getElementById("resetMap")?.addEventListener("click", () => {
-    worldMap?.setView([20, 10], 2);
+    worldMap?.flyTo([20, 10], 2, { duration: 1.4 });
   });
+}
+
+
+/* ── 13c. JOURNEY ─────────────────────────────────────────── */
+
+/*
+  Makes opening a video feel like arriving somewhere:
+  - the map flies to the place before the video opens
+  - the video shows the local time and weather there, right now
+  - "Next stop" flies on to the nearest place you haven't been
+  - places you've watched are remembered in this browser
+*/
+
+const VISITED_KEY = "walkworld-visited-v1";
+
+let visitedIds = loadVisited();
+let journeyToken = 0;
+let journeyActive = false;
+let openTourId = null;
+let nowTimer = null;
+let nowAbort = null;
+const nowCache = new Map();
+
+function loadVisited() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(VISITED_KEY));
+
+    return new Set(Array.isArray(saved) ? saved.map(String) : []);
+  } catch (error) {
+    return new Set();
+  }
+}
+
+function saveVisited() {
+  try {
+    localStorage.setItem(VISITED_KEY, JSON.stringify([...visitedIds]));
+  } catch (error) {
+    console.warn("WalkWorld: could not save visited places:", error);
+  }
+}
+
+function isVisited(id) {
+  return visitedIds.has(String(id));
+}
+
+function markVisited(id) {
+  if (isVisited(id)) return;
+
+  visitedIds.add(String(id));
+  saveVisited();
+  applyVisitedAll();
+}
+
+function applyVisitedAll() {
+  document.querySelectorAll(".card[data-card-id]").forEach(card => {
+    card.classList.toggle("is-visited", isVisited(card.dataset.cardId));
+  });
+
+  markerById.forEach((marker, id) => {
+    const visited = isVisited(id);
+
+    if (marker._wwTour && marker._wwVisited !== visited) {
+      marker._wwVisited = visited;
+      marker.setIcon(buildPinIcon(marker._wwTour, visited));
+    }
+  });
+
+  const total = hasTours() ? tours.length : 0;
+
+  setText(
+    "#mapVisited",
+    visitedIds.size ? `You’ve visited ${visitedIds.size} of ${total}` : ""
+  );
+}
+
+function prefersReducedMotion() {
+  return Boolean(
+    window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
+  );
+}
+
+// Distance in km between two [lat, lng] points.
+function distanceKm(a, b) {
+  const rad = Math.PI / 180;
+  const dLat = (b[0] - a[0]) * rad;
+  const dLng = (b[1] - a[1]) * rad;
+
+  const h =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(a[0] * rad) * Math.cos(b[0] * rad) * Math.sin(dLng / 2) ** 2;
+
+  return 12742 * Math.asin(Math.sqrt(h));
+}
+
+function showJourneyBanner(text) {
+  let banner = document.getElementById("journeyBanner");
+
+  if (!banner) {
+    banner = document.createElement("div");
+    banner.id = "journeyBanner";
+    banner.className = "journey-banner";
+    banner.setAttribute("role", "status");
+
+    (document.getElementById("world-map") || document.body).appendChild(banner);
+  }
+
+  banner.textContent = text;
+  banner.classList.add("show");
+}
+
+function hideJourneyBanner() {
+  document.getElementById("journeyBanner")?.classList.remove("show");
+}
+
+function cancelJourney() {
+  journeyToken++;
+  journeyActive = false;
+  hideJourneyBanner();
+}
+
+// Fly to a tour's pin, then open its video on arrival.
+function travelToTour(id, note) {
+  const tour = getTourById(id);
+
+  if (!tour) return;
+
+  const marker = markerById.get(String(id));
+  const token = ++journeyToken;
+
+  journeyActive = true;
+  worldMap?.closePopup();
+  selectTour(id, { scroll: true });
+
+  if (!marker || !worldMap || prefersReducedMotion()) {
+    journeyActive = false;
+    openModal(id);
+    return;
+  }
+
+  const dest = marker.getLatLng();
+  const center = worldMap.getCenter();
+  const km = distanceKm([center.lat, center.lng], [dest.lat, dest.lng]);
+  const duration = Math.min(3.2, Math.max(1.2, 1.2 + km / 6000));
+
+  showJourneyBanner(note || `Flying to ${tour.city}, ${tour.country}…`);
+
+  let arrived = false;
+
+  const arrive = () => {
+    if (arrived || token !== journeyToken) return;
+
+    arrived = true;
+    journeyActive = false;
+    hideJourneyBanner();
+    openModal(id);
+  };
+
+  worldMap.once("moveend", arrive);
+  worldMap.flyTo(dest, Math.max(worldMap.getZoom(), 6), { duration });
+
+  // Safety net in case the map never reports that it stopped moving.
+  setTimeout(arrive, duration * 1000 + 800);
+}
+
+// Close the video and fly on to the nearest place you haven't been yet.
+function nextStop() {
+  if (!hasTours()) return;
+
+  const here = openTourId !== null ? getTourById(openTourId) : null;
+  const center = worldMap?.getCenter();
+  const origin = (here && getTourCoordinates(here)) ||
+    (center ? [center.lat, center.lng] : null);
+
+  if (!origin) return;
+
+  const reachable = tours.filter(t =>
+    String(t.id) !== String(openTourId) &&
+    getTourCoordinates(t) &&
+    (markerById.size === 0 || markerById.has(String(t.id)))
+  );
+
+  const unvisited = reachable.filter(t => !isVisited(t.id));
+  const pool = unvisited.length ? unvisited : reachable;
+
+  let best = null;
+  let bestKm = Infinity;
+
+  pool.forEach(t => {
+    const km = distanceKm(origin, getTourCoordinates(t));
+
+    if (km < bestKm) {
+      best = t;
+      bestKm = km;
+    }
+  });
+
+  if (!best) return;
+
+  const note = bestKm < 5
+    ? `Another walk in ${best.city}…`
+    : `Next stop: ${best.city}, ${best.country}. About ${Math.round(bestKm).toLocaleString()} km away…`;
+
+  closeModal();
+  travelToTour(best.id, note);
+}
+
+/* Local time and weather at the destination (Open-Meteo: free, no key) */
+
+function describeWeather(code, isDay) {
+  if (code === 0) return { text: "clear skies", icon: isDay ? "☀️" : "🌙" };
+  if (code === 1) return { text: "mostly clear", icon: isDay ? "🌤️" : "🌙" };
+  if (code === 2) return { text: "partly cloudy", icon: "⛅" };
+  if (code === 3) return { text: "overcast", icon: "☁️" };
+  if (code === 45 || code === 48) return { text: "foggy", icon: "🌫️" };
+  if (code >= 51 && code <= 57) return { text: "drizzle", icon: "🌦️" };
+  if (code >= 61 && code <= 67) return { text: "raining", icon: "🌧️" };
+  if (code >= 71 && code <= 77) return { text: "snowing", icon: "❄️" };
+  if (code >= 80 && code <= 82) return { text: "showers", icon: "🌦️" };
+  if (code === 85 || code === 86) return { text: "snow showers", icon: "🌨️" };
+  if (code >= 95) return { text: "thunderstorms", icon: "⛈️" };
+
+  return { text: "", icon: "🌍" };
+}
+
+function loadLocalNow(tour) {
+  const el = document.getElementById("modalNow");
+
+  clearInterval(nowTimer);
+  nowAbort?.abort();
+
+  if (!el) return;
+
+  el.textContent = "";
+
+  const coords = getTourCoordinates(tour);
+
+  if (!coords) return;
+
+  const paint = info => {
+    if (openTourId !== String(tour.id)) return;
+
+    let time = "";
+
+    try {
+      time = new Intl.DateTimeFormat(undefined, {
+        hour: "numeric",
+        minute: "2-digit",
+        timeZone: info.timezone
+      }).format(new Date());
+    } catch (error) {
+      time = "";
+    }
+
+    const weather = describeWeather(info.code, info.isDay);
+
+    el.textContent =
+      `${weather.icon} ` +
+      (time ? `It’s ${time} in ${tour.city}. ` : `Right now in ${tour.city}. `) +
+      `${Math.round(info.temp)}°C` +
+      (weather.text ? `, ${weather.text}.` : ".");
+  };
+
+  const show = info => {
+    paint(info);
+    nowTimer = setInterval(() => paint(info), 30000);
+  };
+
+  const key = `${coords[0].toFixed(2)},${coords[1].toFixed(2)}`;
+
+  if (nowCache.has(key)) {
+    show(nowCache.get(key));
+    return;
+  }
+
+  nowAbort = new AbortController();
+
+  const url =
+    "https://api.open-meteo.com/v1/forecast" +
+    `?latitude=${coords[0]}&longitude=${coords[1]}` +
+    "&current=temperature_2m,weather_code,is_day&timezone=auto";
+
+  fetch(url, { signal: nowAbort.signal })
+    .then(response => (response.ok ? response.json() : Promise.reject()))
+    .then(data => {
+      const current = data?.current;
+
+      if (!current) return;
+
+      const info = {
+        timezone: data.timezone,
+        temp: current.temperature_2m,
+        code: current.weather_code,
+        isDay: current.is_day === 1
+      };
+
+      nowCache.set(key, info);
+      show(info);
+    })
+    .catch(() => {
+      // Offline or blocked: the strip just stays empty.
+    });
 }
 
 
@@ -1812,6 +2190,7 @@ function initBackToTop() {
 function initKeyboardControls() {
   document.addEventListener("keydown", event => {
     if (event.key === "Escape") {
+      cancelJourney();
       closeModal();
       closeRandom();
       closeCountryPanel();
@@ -1860,14 +2239,42 @@ function injectExtraStyles() {
 
     .card-locate:hover { background: rgba(124, 156, 255, 0.18); }
 
-    .ww-map-marker .ww-map-pin {
-      transition: transform 0.15s ease, filter 0.15s ease;
-      transform-origin: 50% 100%;
+    /* Map pins: a solid white teardrop with a coloured ring, so the flag
+       or emoji never blends into the map and the target is easy to hit. */
+    .leaflet-marker-icon.ww-map-marker .ww-map-pin {
+      position: absolute !important;
+      top: 4px !important;
+      left: 3px !important;
+      width: 38px !important;
+      height: 38px !important;
+      box-sizing: border-box !important;
+      display: grid !important;
+      place-items: center !important;
+      border: 3px solid #5b7cfa !important;
+      border-radius: 50% 50% 50% 0 !important;
+      background: #ffffff !important;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.4) !important;
+      transform: rotate(-45deg) !important;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      cursor: pointer;
     }
 
-    .ww-map-marker.ww-pin-active .ww-map-pin {
-      transform: scale(1.4);
-      filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.45));
+    .leaflet-marker-icon.ww-map-marker .ww-map-pin > span {
+      display: block !important;
+      font-size: 20px !important;
+      line-height: 1 !important;
+      transform: rotate(45deg) !important;
+    }
+
+    .leaflet-marker-icon.ww-map-marker:hover .ww-map-pin,
+    .leaflet-marker-icon.ww-map-marker.ww-pin-active .ww-map-pin {
+      transform: rotate(-45deg) scale(1.15) !important;
+      border-color: #8aa4ff !important;
+      box-shadow: 0 5px 14px rgba(0, 0, 0, 0.5) !important;
+    }
+
+    .leaflet-marker-icon.ww-map-marker.ww-pin-visited .ww-map-pin {
+      border-color: #3ecf8e !important;
     }
 
     .ww-popup-watch {
@@ -1881,6 +2288,120 @@ function injectExtraStyles() {
       font: inherit;
       font-weight: 600;
       cursor: pointer;
+    }
+    .card-thumb { position: relative; }
+
+    .card-visited-tag {
+      display: none;
+      position: absolute;
+      left: 10px;
+      bottom: 10px;
+      z-index: 3;
+      padding: 3px 9px;
+      border-radius: 999px;
+      background: #3ecf8e;
+      color: #06210f;
+      font-size: 0.72rem;
+      font-weight: 600;
+    }
+
+    .card.is-visited .card-visited-tag { display: block; }
+
+    .leaflet-marker-icon.ww-map-marker.ww-pin-visited::after {
+      content: "✓";
+      position: absolute;
+      top: 2px;
+      right: 2px;
+      z-index: 2;
+      width: 16px;
+      height: 16px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: #3ecf8e;
+      color: #06210f;
+      font-size: 11px;
+      font-weight: 700;
+      pointer-events: none;
+    }
+
+    .journey-banner {
+      position: absolute;
+      left: 50%;
+      bottom: 34px;
+      z-index: 850;
+      max-width: min(90%, 520px);
+      padding: 12px 22px;
+      border-radius: 999px;
+      background: rgba(14, 20, 34, 0.88);
+      color: #f2f5ff;
+      font-size: 0.95rem;
+      font-weight: 500;
+      text-align: center;
+      pointer-events: none;
+      opacity: 0;
+      transform: translate(-50%, 12px);
+      transition: opacity 0.25s ease, transform 0.25s ease;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+
+    .journey-banner.show {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+
+    .modal-now {
+      margin: 6px 0 0;
+      font-size: 0.9rem;
+      opacity: 0.85;
+    }
+
+    .modal-now:empty { display: none; }
+
+    .btn-next {
+      padding: 9px 16px;
+      border: 0;
+      border-radius: 999px;
+      background: #7c9cff;
+      color: #0b1020;
+      font: inherit;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .btn-next:hover { filter: brightness(1.08); }
+
+    .ww-cluster-wrap { background: none; border: 0; }
+
+    .ww-cluster {
+      width: 100%;
+      height: 100%;
+      display: grid;
+      place-items: center;
+      box-sizing: border-box;
+      border: 2px solid #7c9cff;
+      border-radius: 50%;
+      background: rgba(14, 20, 34, 0.92);
+      color: #f2f5ff;
+      font-weight: 700;
+      box-shadow: 0 0 0 5px rgba(124, 156, 255, 0.22),
+        0 4px 14px rgba(0, 0, 0, 0.35);
+      transition: transform 0.15s ease;
+      cursor: pointer;
+    }
+
+    .ww-cluster-small { font-size: 0.9rem; }
+    .ww-cluster-medium { font-size: 1rem; }
+    .ww-cluster-large { font-size: 1.1rem; }
+
+    .ww-cluster-wrap:hover .ww-cluster,
+    .ww-cluster-wrap.ww-pin-active .ww-cluster {
+      transform: scale(1.12);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .journey-banner { transition: none; }
     }
   `;
 
@@ -1902,6 +2423,9 @@ Object.assign(window, {
   filterTours,
   openModal,
   closeModal,
+  travelToTour,
+  nextStop,
+  cancelJourney,
   handleBackdropClick,
   openRandomTour,
   spinAgain,

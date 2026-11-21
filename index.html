@@ -11,6 +11,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
   <link rel="stylesheet" href="styles.css">
   <!-- Full-window map layout. Remove this line to go back to the old layout. -->
   <link rel="stylesheet" href="immersive.css">
@@ -98,8 +99,13 @@
           aria-label="Interactive world map">
         </div>
 
+        <button class="map-home" id="resetMap" type="button">
+          🌍 World view
+        </button>
+
         <div class="map-chip" role="status">
           <strong id="mapVisibleCount">0</strong> walks on the map
+          <span class="map-chip-visited" id="mapVisited"></span>
         </div>
 
       </div>
@@ -179,10 +185,15 @@
           <p class="modal-city" id="modalCity"></p>
           <p class="modal-title" id="modalTitle"></p>
           <p class="modal-views" id="modalViews"></p>
+          <p class="modal-now" id="modalNow" aria-live="polite"></p>
 
         </div>
 
         <div class="modal-actions">
+
+          <button class="btn-next" id="modalNextBtn" type="button" onclick="nextStop()">
+            Next stop
+          </button>
 
           <a
             class="btn-yt"
@@ -211,6 +222,7 @@
 
   <!-- EXTERNAL LIBRARIES -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 
   <!-- PROJECT JAVASCRIPT -->
   <script src="data.js"></script>

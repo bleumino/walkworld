@@ -193,6 +193,34 @@ body #worldMap {
   font-weight: 700;
 }
 
+.map-chip-visited:not(:empty) {
+  margin-left: 10px;
+  padding-left: 12px;
+  border-left: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* Fly back out to the whole world */
+.map-home {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  z-index: 800;
+  padding: 8px 14px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(14, 20, 34, 0.8);
+  color: #f2f5ff;
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.map-home:hover {
+  background: rgba(30, 40, 66, 0.9);
+}
+
 /* Dark mode: darken the map tiles so the map matches the site.
    (Pins, popups and controls are not affected.) */
 :root[data-theme="dark"] .leaflet-tile-pane {
