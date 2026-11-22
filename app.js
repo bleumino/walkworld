@@ -496,8 +496,8 @@ function initCinematicControls() {
 
   modalBox.dataset.cinematicReady = "true";
 
-  modalBox.addEventListener("mousemove", showCinematicControls);
-  modalBox.addEventListener("mouseenter", showCinematicControls);
+modalBox.addEventListener("pointermove", showCinematicControls);
+modalBox.addEventListener("pointerenter", showCinematicControls);
 }
 
 

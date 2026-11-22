@@ -995,3 +995,30 @@ body .sidebar-filters .filter-btn.active {
   transform: translateY(18px);
   pointer-events: none;
 }
+
+
+
+/* EASY HOVER ACTIVATION ZONE */
+
+#modal .cinematic-player::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 180px;
+  z-index: 4;
+  pointer-events: auto;
+}
+
+
+/* LIQUID GLASS CONTROL PANEL */
+
+#modal .modal-info {
+  background: rgba(20, 28, 42, 0.58);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+
+  border-top: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.12);
+}
