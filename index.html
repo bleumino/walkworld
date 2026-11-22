@@ -23,6 +23,11 @@
   <nav id="mainNav">
     <a href="#home" class="logo">Walk<span>World</span></a>
 
+    <button class="theme-toggle sound-toggle" id="soundToggle" type="button"
+            onclick="toggleSound()" aria-label="Mute sounds" aria-pressed="true" title="Mute sounds">
+      🔊
+    </button>
+
     <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle dark mode">
       🌙
     </button>
@@ -174,7 +179,7 @@
     id="modal"
     onclick="handleBackdropClick(event)">
 
-    <div class="modal" id="modalBox">
+    <div class="modal cinematic-player" id="modalBox">
 
       <div class="modal-video" id="modalVideo"></div>
 

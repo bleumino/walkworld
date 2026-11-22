@@ -306,90 +306,110 @@ function render() {
     return;
   }
 
-  grid.innerHTML = filtered.map((t, i) => {
-    const videoPreview = t.videoId
-      ? `data-video="https://www.youtube.com/embed/${encodeURIComponent(cleanVideoId(t.videoId))}?rel=0&modestbranding=1"`
-      : "";
+grid.innerHTML = filtered.map((t, i) => {
+  return `
+    <article class="card boarding-pass"
+      data-card-id="${escapeHTML(t.id)}"
+      style="${i < 12 ? `animation-delay:${i * 0.04}s` : "animation:none"}">
 
-    return `
-      <article class="card" data-card-id="${escapeHTML(t.id)}" style="${i < 12 ? `animation-delay:${i * 0.04}s` : "animation:none"}">
+      <!-- Main ticket section -->
+      <div class="ticket-main">
 
-        <div
-          class="card-thumb"
-          style="background:${escapeHTML(t.color || "#dce9ff")}"
-          data-tour-id="${escapeHTML(t.id)}"
-          ${videoPreview}
-        >
+        <div class="ticket-topline">
+          <span class="ticket-brand">WALKWORLD</span>
 
-
-          <div class="card-thumb-bg">
-            ${escapeHTML(t.emoji || "🌍")}
-          </div>
-
-          <div class="card-thumb-overlay"></div>
-
-          <div class="thumb-play">
-            <div class="thumb-play-tri"></div>
-          </div>
-
-          <span class="card-visited-tag">Visited</span>
-
-          <div class="card-badge-wrap">
+          <div class="ticket-tags">
             ${t.trending
-              ? '<span class="badge badge-trending">Trending</span>'
+              ? '<span class="ticket-trending">TRENDING</span>'
               : ""}
-
-            <span class="badge badge-region">
+            <span class="ticket-region">
               ${escapeHTML(regionLabel(t.region))}
             </span>
           </div>
-
-          <span class="card-duration">
-            ${escapeHTML(t.duration || "")}
-          </span>
-
         </div>
 
-        <div class="card-body">
+        <div class="ticket-destination">
+          <div class="ticket-city">
+            <span class="ticket-label">YOUR DESTINATION</span>
+            <h3>${escapeHTML(t.city)}</h3>
+            <p>${escapeHTML(t.country)}</p>
+          </div>
 
-          <p class="card-city">
-            ${escapeHTML(t.city)}, ${escapeHTML(t.country)}
-          </p>
-
-          <p class="card-title">
-            ${escapeHTML(t.title)}
-          </p>
-
-          <div class="card-footer">
-
-            <span class="card-views">
-              <strong>${escapeHTML(t.views || "0")}</strong> views
-            </span>
-
-            <button
-              class="card-locate"
-              data-locate-id="${escapeHTML(t.id)}"
-              type="button"
-              aria-label="Show ${escapeHTML(t.city)} on the map"
-              title="Show on map"
-            >
-              📍
-            </button>
-
-            <button
-              class="card-watch"
-              data-tour-id="${escapeHTML(t.id)}"
-              type="button"
-            >
-              ▶ Watch
-            </button>
-
+          <div class="ticket-destination-icon">
+            ${escapeHTML(t.emoji || "🌍")}
           </div>
         </div>
 
-      </article>
-    `;
-  }).join("");
+        <div class="ticket-divider">
+          <span></span>
+          <span class="ticket-divider-line"></span>
+          <span></span>
+        </div>
+
+        <div class="ticket-details">
+          <div>
+            <span class="ticket-label">EXPERIENCE</span>
+            <strong>${escapeHTML(t.title)}</strong>
+          </div>
+
+          <div>
+            <span class="ticket-label">DURATION</span>
+            <strong>${escapeHTML(t.duration || "Explore")}</strong>
+          </div>
+
+          <div>
+            <span class="ticket-label">VIEWS</span>
+            <strong>${escapeHTML(t.views || "0")}</strong>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Ticket stub -->
+      <div class="ticket-stub">
+
+        <div class="ticket-stub-top">
+          <span class="ticket-label">BOARDING PASS</span>
+          <span class="ticket-number">WW-${String(i + 1).padStart(3, "0")}</span>
+        </div>
+
+        <div class="ticket-stub-bottom">
+
+          <button
+            class="card-locate"
+            data-locate-id="${escapeHTML(t.id)}"
+            type="button"
+            aria-label="Show ${escapeHTML(t.city)} on the map"
+            title="Show on map"
+          >
+            📍
+          </button>
+
+          <button
+            class="card-watch"
+            data-tour-id="${escapeHTML(t.id)}"
+            type="button"
+          >
+            ▶ BOARD
+          </button>
+
+        </div>
+
+        <span class="card-visited-tag">✓ VISITED</span>
+
+      </div>
+
+      <!-- Keep the original thumbnail interaction target -->
+      <div
+        class="card-thumb ticket-click-target"
+        data-tour-id="${escapeHTML(t.id)}"
+        aria-label="Watch walking tour of ${escapeHTML(t.city)}"
+      ></div>
+
+    </article>
+  `;
+}).join("");
+
 
   applySelectedCard();
   applyVisitedAll();
@@ -421,49 +441,13 @@ function initCardInteractions() {
     travelToTour(target.dataset.tourId);
   });
 
-  // Pin highlight on hover, plus the video preview (loaded only after the
-  // pointer rests on a thumbnail for a moment, so scrolling past is free).
-  let previewTimer = null;
-
-  function stopPreview(thumb) {
-    clearTimeout(previewTimer);
-    previewTimer = null;
-
-    thumb?.classList.remove("playing");
-    thumb?.querySelector(".card-video")?.remove();
-  }
-
+  // Hovering a card lights up its pin on the map.
   grid.addEventListener("mouseover", event => {
     const card = event.target.closest(".card");
 
     if (card && !card.contains(event.relatedTarget)) {
       setPinActive(card.dataset.cardId, true);
     }
-
-    const thumb = event.target.closest(".card-thumb");
-
-    if (!thumb || thumb.contains(event.relatedTarget)) return;
-
-    const videoUrl = thumb.dataset.video;
-
-    if (!videoUrl) return;
-
-    clearTimeout(previewTimer);
-
-    previewTimer = setTimeout(() => {
-      if (thumb.querySelector(".card-video")) return;
-
-      const iframe = document.createElement("iframe");
-
-      iframe.className = "card-video";
-      iframe.title = "Tour preview";
-      iframe.allow = "autoplay; encrypted-media";
-      iframe.style.pointerEvents = "none";
-      iframe.src = `${videoUrl}&autoplay=1&mute=1`;
-
-      thumb.prepend(iframe);
-      thumb.classList.add("playing");
-    }, 350);
   });
 
   grid.addEventListener("mouseout", event => {
@@ -472,19 +456,102 @@ function initCardInteractions() {
     if (card && !card.contains(event.relatedTarget)) {
       setPinActive(card.dataset.cardId, false);
     }
-
-    const thumb = event.target.closest(".card-thumb");
-
-    if (!thumb || thumb.contains(event.relatedTarget)) return;
-
-    stopPreview(thumb);
   });
 }
 
+/* ── YOUTUBE COMPLETION TRACKING ── */
+
+let youtubePlayer = null;
+let youtubeApiLoading = false;
+let pendingYouTubeTourId = null;
+let cinematicHideTimer = null;
+
+function showCinematicControls() {
+  const modalBox = document.getElementById("modalBox");
+
+  if (!modalBox) return;
+
+  modalBox.classList.remove("controls-hidden");
+
+  clearTimeout(cinematicHideTimer);
+
+  // Keep controls visible on touch devices
+  if (window.matchMedia("(hover: none), (pointer: coarse)").matches) {
+    return;
+  }
+
+  cinematicHideTimer = setTimeout(() => {
+    modalBox.classList.add("controls-hidden");
+  }, 2500);
+}
+
+
+function initCinematicControls() {
+  const modalBox = document.getElementById("modalBox");
+
+  if (!modalBox) return;
+
+  // Attach listeners only once
+  if (modalBox.dataset.cinematicReady === "true") return;
+
+  modalBox.dataset.cinematicReady = "true";
+
+  modalBox.addEventListener("mousemove", showCinematicControls);
+  modalBox.addEventListener("mouseenter", showCinematicControls);
+}
+
+
+
+function createYouTubePlayer() {
+  const iframe = document.getElementById("ww-youtube-player");
+
+  if (!iframe || !window.YT?.Player) return;
+
+  if (youtubePlayer) {
+    youtubePlayer.destroy();
+    youtubePlayer = null;
+  }
+
+  youtubePlayer = new YT.Player(iframe, {
+    events: {
+      onStateChange: event => {
+        if (
+          event.data === YT.PlayerState.ENDED &&
+          pendingYouTubeTourId !== null
+        ) {
+          markVisited(pendingYouTubeTourId);
+          pendingYouTubeTourId = null;
+
+          console.log("WalkWorld: tour completed!");
+        }
+      }
+    }
+  });
+}
+
+function loadYouTubeAPI() {
+  if (window.YT?.Player) {
+    createYouTubePlayer();
+    return;
+  }
+
+  if (youtubeApiLoading) return;
+
+  youtubeApiLoading = true;
+
+  window.onYouTubeIframeAPIReady = () => {
+    createYouTubePlayer();
+  };
+
+  const script = document.createElement("script");
+  script.src = "https://www.youtube.com/iframe_api";
+  document.head.appendChild(script);
+}
 
 /* ── 7. VIDEO MODAL ───────────────────────────────────────── */
 
 function openModal(id) {
+  pendingYouTubeTourId = null;
   if (!hasTours()) return;
 
   const tour = getTourById(id);
@@ -510,11 +577,14 @@ function openModal(id) {
 
   if (ytLink) ytLink.href = tourWatchUrl(tour);
 
+  
   if (tour.videoId) {
-    const iframe = document.createElement("iframe");
+   const iframe = document.createElement("iframe");
 
-    iframe.src =
-      `https://www.youtube.com/embed/${encodeURIComponent(cleanVideoId(tour.videoId))}?autoplay=1&rel=0&modestbranding=1`;
+iframe.id = "ww-youtube-player";
+
+iframe.src =
+  `https://www.youtube.com/embed/${encodeURIComponent(cleanVideoId(tour.videoId))}?autoplay=1&rel=0&modestbranding=1&enablejsapi=1`;
 
     iframe.allow =
       "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
@@ -522,7 +592,16 @@ function openModal(id) {
     iframe.allowFullscreen = true;
     iframe.title = tour.title;
 
-    videoEl.replaceChildren(iframe);
+ pendingYouTubeTourId = String(tour.id);
+
+if (youtubePlayer) {
+  youtubePlayer.destroy();
+  youtubePlayer = null;
+}
+
+videoEl.replaceChildren(iframe);
+
+loadYouTubeAPI();
   } else {
     videoEl.innerHTML = `
       <div class="modal-placeholder">
@@ -543,20 +622,29 @@ function openModal(id) {
   modal.classList.add("open");
   document.body.style.overflow = "hidden";
 
-  openTourId = String(tour.id);
-  markVisited(tour.id);
-  loadLocalNow(tour);
+initCinematicControls();
+showCinematicControls();
+
+ openTourId = String(tour.id);
+loadLocalNow(tour);
 }
 
 function closeModal() {
   const modal = document.getElementById("modal");
   const videoEl = document.getElementById("modalVideo");
 
+  clearTimeout(cinematicHideTimer);
+
+  document.getElementById("modalBox")
+  ?.classList.remove("controls-hidden");
+
   modal?.classList.remove("open");
 
   clearInterval(nowTimer);
   nowAbort?.abort();
   openTourId = null;
+  pendingYouTubeTourId = null;
+  
 
   if (videoEl) videoEl.replaceChildren();
 
@@ -1396,6 +1484,7 @@ function initMap() {
       : L.layerGroup();
 
   markerLayer.addTo(worldMap);
+  markerLayer.on("clusterclick", () => playSound("pop"));
 
   worldMap.on("click", closeCountryPanel);
 
@@ -1495,7 +1584,10 @@ function createTourMarker(tour, coordinates) {
 
   // Clicking a pin opens its popup (Leaflet does that itself) and scrolls
   // the list to the matching video.
-  marker.on("click", () => selectTour(tour.id, { scroll: true }));
+  marker.on("click", () => {
+    playSound("pop");
+    selectTour(tour.id, { scroll: true });
+  });
 
   return marker;
 }
@@ -1857,6 +1949,7 @@ function travelToTour(id, note) {
   const duration = Math.min(3.2, Math.max(1.2, 1.2 + km / 6000));
 
   showJourneyBanner(note || `Flying to ${tour.city}, ${tour.country}…`);
+  playSound("whoosh", Math.min(1.6, duration));
 
   let arrived = false;
 
@@ -1866,6 +1959,7 @@ function travelToTour(id, note) {
     arrived = true;
     journeyActive = false;
     hideJourneyBanner();
+    playSound("arrive");
     openModal(id);
   };
 
@@ -2208,6 +2302,164 @@ function initBackdropControls() {
 }
 
 
+/* ── 18a. SOUND ───────────────────────────────────────────── */
+
+/*
+  Very quiet sounds made with the browser's own audio engine (no files to
+  load): a soft tick on buttons, a pop on pins, a whoosh while the map flies
+  and a gentle chime on arrival. There is a mute button in the top bar, and
+  the choice is remembered.
+*/
+
+const SOUND_KEY = "walkworld-sound";
+
+let soundOn = true;
+let audioCtx = null;
+
+try {
+  soundOn = localStorage.getItem(SOUND_KEY) !== "off";
+} catch (error) {
+  soundOn = true;
+}
+
+function getAudio() {
+  if (!soundOn) return null;
+
+  if (!audioCtx) {
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+
+    if (!Ctx) return null;
+
+    try {
+      audioCtx = new Ctx();
+    } catch (error) {
+      return null;
+    }
+  }
+
+  if (audioCtx.state === "suspended") audioCtx.resume();
+
+  return audioCtx;
+}
+
+function tone(freq, { start = 0, dur = 0.12, gain = 0.03, slideTo = null } = {}) {
+  const ctx = getAudio();
+
+  if (!ctx) return;
+
+  const t0 = ctx.currentTime + start;
+  const osc = ctx.createOscillator();
+  const amp = ctx.createGain();
+
+  osc.type = "sine";
+  osc.frequency.setValueAtTime(freq, t0);
+
+  if (slideTo) osc.frequency.exponentialRampToValueAtTime(slideTo, t0 + dur);
+
+  amp.gain.setValueAtTime(0.0001, t0);
+  amp.gain.exponentialRampToValueAtTime(gain, t0 + 0.012);
+  amp.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+
+  osc.connect(amp).connect(ctx.destination);
+  osc.start(t0);
+  osc.stop(t0 + dur + 0.03);
+}
+
+function whoosh(duration = 1) {
+  const ctx = getAudio();
+
+  if (!ctx) return;
+
+  const length = Math.floor(ctx.sampleRate * duration);
+  const buffer = ctx.createBuffer(1, length, ctx.sampleRate);
+  const data = buffer.getChannelData(0);
+
+  for (let i = 0; i < length; i++) data[i] = Math.random() * 2 - 1;
+
+  const source = ctx.createBufferSource();
+  const filter = ctx.createBiquadFilter();
+  const amp = ctx.createGain();
+  const t0 = ctx.currentTime;
+
+  source.buffer = buffer;
+  filter.type = "bandpass";
+  filter.Q.value = 0.9;
+  filter.frequency.setValueAtTime(250, t0);
+  filter.frequency.exponentialRampToValueAtTime(1600, t0 + duration * 0.7);
+  filter.frequency.exponentialRampToValueAtTime(500, t0 + duration);
+
+  amp.gain.setValueAtTime(0.0001, t0);
+  amp.gain.exponentialRampToValueAtTime(0.05, t0 + duration * 0.35);
+  amp.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);
+
+  source.connect(filter).connect(amp).connect(ctx.destination);
+  source.start(t0);
+}
+
+function playSound(name, arg) {
+  if (!soundOn) return;
+
+  switch (name) {
+    case "tick":
+      tone(880, { dur: 0.05, gain: 0.02 });
+      break;
+    case "pop":
+      tone(520, { dur: 0.09, gain: 0.03, slideTo: 780 });
+      break;
+    case "whoosh":
+      whoosh(arg || 1);
+      break;
+    case "arrive":
+      tone(659.25, { dur: 0.45, gain: 0.03 });
+      tone(987.77, { start: 0.14, dur: 0.7, gain: 0.022 });
+      break;
+    default:
+      break;
+  }
+}
+
+function updateSoundButton() {
+  const button = document.getElementById("soundToggle");
+
+  if (!button) return;
+
+  button.textContent = soundOn ? "🔊" : "🔇";
+  button.setAttribute("aria-pressed", soundOn ? "true" : "false");
+  button.setAttribute("aria-label", soundOn ? "Mute sounds" : "Turn sounds on");
+  button.title = soundOn ? "Mute sounds" : "Turn sounds on";
+}
+
+function toggleSound() {
+  soundOn = !soundOn;
+
+  try {
+    localStorage.setItem(SOUND_KEY, soundOn ? "on" : "off");
+  } catch (error) {
+    console.warn("WalkWorld: could not save the sound setting:", error);
+  }
+
+  updateSoundButton();
+  playSound("tick");
+}
+
+// A soft tick on the small interface buttons. Pins, cluster bubbles and
+// flights have their own sounds, so they are left out here.
+function initSound() {
+  updateSoundButton();
+
+  document.addEventListener("click", event => {
+    if (
+      event.target.closest(
+        ".filter-btn, .random-btn, .card-locate, .map-home, .theme-toggle, " +
+        ".btn-close, .random-close, .random-again-btn"
+      )
+    ) {
+      playSound("tick");
+    }
+  });
+}
+
+
 /* ── 18b. EXTRA STYLES ────────────────────────────────────── */
 
 // Styles for the pin/list interaction. They are injected from here so the
@@ -2400,6 +2652,94 @@ function injectExtraStyles() {
       transform: scale(1.12);
     }
 
+    /* ── Feel: gentle motion and feedback ── */
+
+    @keyframes ww-fade-in {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes ww-pop-in {
+      from { opacity: 0; translate: 0 8px; scale: 0.97; }
+      to { opacity: 1; translate: 0 0; scale: 1; }
+    }
+
+    .leaflet-marker-icon.ww-map-marker {
+      animation: ww-fade-in 0.3s ease both;
+    }
+
+    .modal-backdrop.open,
+    .random-backdrop.open {
+      animation: ww-fade-in 0.2s ease both;
+    }
+
+    .modal-backdrop.open .modal,
+    .random-backdrop.open .random-modal {
+      animation: ww-pop-in 0.24s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    }
+
+    .filter-btn, .random-btn, .card-watch, .card-locate, .btn-next, .btn-yt,
+    .btn-close, .watch-pill, .random-again-btn, .theme-toggle, .map-home,
+    .ww-popup-watch {
+      transition: scale 0.12s ease, filter 0.15s ease, background-color 0.15s ease,
+        border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease,
+        transform 0.15s ease;
+    }
+
+    .filter-btn:hover, .random-btn:hover, .card-watch:hover, .btn-next:hover,
+    .btn-yt:hover, .watch-pill:hover, .random-again-btn:hover, .map-home:hover,
+    .ww-popup-watch:hover {
+      filter: brightness(1.08);
+    }
+
+    .filter-btn:active, .random-btn:active, .card-watch:active,
+    .card-locate:active, .btn-next:active, .btn-yt:active, .btn-close:active,
+    .watch-pill:active, .random-again-btn:active, .theme-toggle:active,
+    .map-home:active, .ww-popup-watch:active {
+      scale: 0.96;
+    }
+
+    button:focus-visible, a:focus-visible, .search-input:focus-visible {
+      outline: 2px solid #7c9cff;
+      outline-offset: 2px;
+    }
+
+    .search-input:focus {
+      box-shadow: 0 0 0 3px rgba(124, 156, 255, 0.25);
+    }
+
+    .card {
+      transition: translate 0.18s ease, box-shadow 0.2s ease,
+        border-color 0.2s ease;
+    }
+
+    .card:hover {
+      translate: 0 -2px;
+    }
+
+    .tour-sidebar > .grid {
+      scroll-behavior: smooth;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .leaflet-marker-icon.ww-map-marker,
+      .modal-backdrop.open,
+      .random-backdrop.open,
+      .modal-backdrop.open .modal,
+      .random-backdrop.open .random-modal {
+        animation: none;
+      }
+
+      .filter-btn, .random-btn, .card-watch, .card-locate, .btn-next, .btn-yt,
+      .btn-close, .watch-pill, .random-again-btn, .theme-toggle, .map-home,
+      .ww-popup-watch, .card {
+        transition: none;
+      }
+
+      .card:hover { translate: none; }
+      .tour-sidebar > .grid { scroll-behavior: auto; }
+    }
+
     @media (prefers-reduced-motion: reduce) {
       .journey-banner { transition: none; }
     }
@@ -2425,6 +2765,7 @@ Object.assign(window, {
   closeModal,
   travelToTour,
   nextStop,
+  toggleSound,
   cancelJourney,
   handleBackdropClick,
   openRandomTour,
@@ -2442,6 +2783,7 @@ Object.assign(window, {
 function initApp() {
   try {
     injectExtraStyles();
+    initSound();
     initTheme();
 
     render();
