@@ -645,10 +645,22 @@ function closeModal() {
   openTourId = null;
   pendingYouTubeTourId = null;
   
+// Destroy the YouTube player before removing its iframe.
+if (youtubePlayer) {
+  youtubePlayer.destroy();
+  youtubePlayer = null;
+}
 
-  if (videoEl) videoEl.replaceChildren();
+if (videoEl) videoEl.replaceChildren();
 
-  document.body.style.overflow = "";
+document.body.style.overflow = "";
+
+document.body.style.overflow = "";
+
+// Apply any map updates postponed while the video was open.
+if (mapRefreshPending) {
+  updateMapMarkers();
+}
 }
 
 function handleBackdropClick(event) {
@@ -1455,11 +1467,11 @@ function initMap() {
   worldMap = L.map("worldMap", {
     center: [20, 10],
     zoom: 2,
-    minZoom: 2,
+    minZoom: 0,
     maxZoom: 12,
     worldCopyJump: true,
     scrollWheelZoom: true,
-    zoomControl: false
+    zoomControl: true
   });
 
   L.control.zoom({ position: "bottomright" }).addTo(worldMap);
@@ -1734,8 +1746,18 @@ function selectTour(id, { scroll = false, fly = false, popup = false } = {}) {
   }
 }
 
+let mapRefreshPending = false;
+
 function updateMapMarkers() {
   if (!worldMap || typeof L === "undefined") return;
+
+  // Avoid rebuilding map markers while a video is playing.
+  if (document.getElementById("modal")?.classList.contains("open")) {
+    mapRefreshPending = true;
+    return;
+  }
+
+  mapRefreshPending = false;
 
   markerLayer?.clearLayers();
   mapMarkers = [];
