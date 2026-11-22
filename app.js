@@ -1484,16 +1484,18 @@ function initMap() {
 
   // Nearby pins merge into numbered clusters at world zoom. If the plugin
   // failed to load, fall back to a plain layer so every pin still shows.
-  markerLayer =
-    typeof L.markerClusterGroup === "function"
-      ? L.markerClusterGroup({
-          showCoverageOnHover: false,
-          maxClusterRadius: 55,
-          disableClusteringAtZoom: 9,
-          chunkedLoading: true,
-          iconCreateFunction: createClusterIcon
-        })
-      : L.layerGroup();
+ markerLayer =
+  typeof L.markerClusterGroup === "function"
+    ? L.markerClusterGroup({
+        showCoverageOnHover: false,
+        maxClusterRadius: 55,
+        disableClusteringAtZoom: 9,
+        chunkedLoading: true,
+        animate: false,
+        animateAddingMarkers: false,
+        iconCreateFunction: createClusterIcon
+      })
+    : L.layerGroup();
 
   markerLayer.addTo(worldMap);
   markerLayer.on("clusterclick", () => playSound("pop"));
